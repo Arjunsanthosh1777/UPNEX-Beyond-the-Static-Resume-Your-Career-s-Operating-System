@@ -1,0 +1,12 @@
+{
+  "name": "upnex-insane-edtech",
+  "private": true,
+  "version": "2.0.0",
+  "scripts": {
+    "install:frontend": "npm install --prefix frontend",
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "start": "npm run dev",
+    "predev": "npm install --prefix frontend"
+  }
+}
