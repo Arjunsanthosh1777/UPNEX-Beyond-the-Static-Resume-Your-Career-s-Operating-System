@@ -13,8 +13,8 @@ export default function Navbar() {
         <a href="#intelligence">Intelligence</a>
         <a href="#community">Community</a>
       </div>
-      <Link className="nav-cta" to="/dashboard">
-        Explore UPNEX <ArrowUpRight size={16} />
+      <Link className="nav-cta" to="/login">
+        Enter UPNEX <ArrowUpRight size={16} />
       </Link>
     </nav>
   );

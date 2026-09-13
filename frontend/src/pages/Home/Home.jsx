@@ -48,7 +48,7 @@ export default function Home() {
           <h1 className="hero-title">Your future<br /><em>shouldn't</em><br />be a guess.</h1>
           <p className="hero-copy">Turn your academic data, skills and goals into a clear path forward — with AI, real-world opportunities and guidance built around you.</p>
           <div className="hero-actions">
-            <Link className="btn btn-primary" to="/dashboard"><GraduationCap size={18} /> Explore UPNEX <ArrowUpRight size={17} /></Link>
+            <Link className="btn btn-primary" to="/login"><GraduationCap size={18} /> Explore UPNEX <ArrowUpRight size={17} /></Link>
             <a className="btn btn-ghost" href="#intelligence"><CirclePlay size={17} /> See how it works</a>
           </div>
           <div className="hero-meta"><span><strong>10K+</strong> learners</span><i /> <span><strong>500+</strong> learning paths</span><i /> <span><strong>95%</strong> satisfaction</span></div>
