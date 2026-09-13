@@ -1,81 +1,58 @@
-import { useState } from "react";
-import {
-  Activity, ArrowRight, Bell, BookOpen, BrainCircuit, CalendarDays,
-  CheckCircle2, ChevronRight, CircleHelp, Clock3, Flame, GraduationCap,
-  LayoutDashboard, Menu, Play, Search, Settings, Sparkles, Target, Trophy,
-  Users, X, Zap
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, BrainCircuit, CheckCircle2, FileCheck2, FolderKanban, GraduationCap, LayoutDashboard, Menu, Plus, Search, ShieldCheck, Sparkles, Target, Upload, Users, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import api from "../../services/api";
 
-const courses = [
-  { title: "Full Stack Development", meta: "12 modules · 82% complete", progress: 82, tag: "CONTINUE", art: "course-blue" },
-  { title: "AI & Machine Learning", meta: "18 modules · 34% complete", progress: 34, tag: "KEEP GOING", art: "course-violet" },
-  { title: "Product Design Systems", meta: "9 modules · 12% complete", progress: 12, tag: "START NEXT", art: "course-cyan" },
-];
-
-const nav = [
-  [LayoutDashboard, "Overview"], [BookOpen, "My Learning"], [GraduationCap, "Courses"],
-  [BrainCircuit, "AI Tutor"], [Target, "Assessments"], [Activity, "Progress"], [Trophy, "Achievements"]
-];
+const nav = [[LayoutDashboard, "Overview", "/dashboard"], [ShieldCheck, "Digital Vault", "/profile/vault"], [Target, "Subject Analysis", "/profile/analysis"], [BrainCircuit, "Career Guidance", "/profile/careers"], [FolderKanban, "Live Portfolio", "/profile/portfolio"]];
+const initialForm = { subject: "", category: "", score: "" };
 
 export default function Dashboard() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("Overview");
+  const [profile, setProfile] = useState({ documents: [], marks: [], projects: [], guidance: { paths: [] }, readiness: 0 });
+  const [mark, setMark] = useState(initialForm);
+  const [project, setProject] = useState({ title: "", description: "", skills: "", proofUrl: "" });
+  const [message, setMessage] = useState("");
 
-  return (
-    <main className="main-app">
-      <aside className={`app-sidebar ${open ? "open" : ""}`}>
-        <div className="app-brand"><span>U</span><div><b>UPNEX</b><small>SMART EDUCATION</small></div><button className="mobile-close" onClick={() => setOpen(false)}><X size={18}/></button></div>
-        <div className="sidebar-label">WORKSPACE</div>
-        <nav>{nav.map(([Icon, name]) => <button key={name} className={active === name ? "active" : ""} onClick={() => { setActive(name); setOpen(false); }}><Icon size={18}/><span>{name}</span>{active === name && <i />}</button>)}</nav>
-        <div className="sidebar-bottom">
-          <button><Users size={18}/> Community</button>
-          <button><Settings size={18}/> Settings</button>
-          <Link to="/"><ArrowRight size={18}/> Back to UPNEX</Link>
-        </div>
-      </aside>
+  async function loadProfile() { const { data } = await api.get("/profile"); setProfile(data); }
+  useEffect(() => { loadProfile().catch(() => setMessage("Sign in to load your student profile.")); }, []);
 
-      <section className="app-content">
-        <header className="app-header">
-          <button className="mobile-menu" onClick={() => setOpen(true)}><Menu size={21}/></button>
-          <div className="app-search"><Search size={17}/><input placeholder="Search courses, skills, topics..." /></div>
-          <div className="header-actions"><button><CircleHelp size={19}/></button><button className="notification"><Bell size={19}/><i /></button><div className="user-chip"><span>AK</span><div><b>Alex Kumar</b><small>Student · Level 12</small></div></div></div>
-        </header>
+  async function addDocument(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) return setMessage("Documents must be smaller than 10 MB.");
+    try { await api.post("/profile/documents", { fileName: file.name, fileSize: file.size, documentType: file.name.toLowerCase().includes("mark") ? "MARKSHEET" : "CERTIFICATE" }); setMessage(`${file.name} added to your verified vault.`); await loadProfile(); }
+    catch (error) { setMessage(error.response?.data?.message || "Could not add this document."); }
+    event.target.value = "";
+  }
 
-        <div className="app-body">
-          <div className="app-hero-row">
-            <div><div className="mini-kicker"><span/> YOUR LEARNING SPACE</div><h1>Good morning, Alex <span>✦</span></h1><p>Your next breakthrough is closer than you think.</p></div>
-            <div className="streak-pill"><Flame size={18}/><strong>18</strong><span>day streak</span></div>
-          </div>
+  async function addMark(event) {
+    event.preventDefault();
+    try { await api.post("/profile/marks", { ...mark, score: Number(mark.score) }); setMark(initialForm); setMessage("Subject analysis updated."); await loadProfile(); }
+    catch (error) { setMessage(error.response?.data?.message || "Enter a valid subject and score."); }
+  }
 
-          <section className="command-card">
-            <div className="command-copy"><span>UPNEX AI · PERSONALIZED NEXT MOVE</span><h2>Master React Architecture</h2><p>Based on your recent activity, this is the highest-impact skill for your current path.</p><div className="command-actions"><button className="app-primary"><Play size={15}/> Continue learning</button><button className="app-secondary">Why this? <ArrowRight size={15}/></button></div></div>
-            <div className="command-visual"><div className="command-orbit"><span/><span/><span/><b><BrainCircuit size={25}/><small>AI</small></b></div><div className="ai-badge"><Sparkles size={13}/> 94% MATCH</div></div>
-          </section>
+  async function addProject(event) {
+    event.preventDefault();
+    try { await api.post("/profile/projects", { ...project, skills: project.skills.split(",").map((skill) => skill.trim()).filter(Boolean) }); setProject({ title: "", description: "", skills: "", proofUrl: "" }); setMessage("Project added to your live portfolio."); await loadProfile(); }
+    catch (error) { setMessage(error.response?.data?.message || "Complete the project details first."); }
+  }
 
-          <div className="metric-grid">
-            <Metric icon={Flame} value="18" label="Learning streak" extra="+4 days" />
-            <Metric icon={BookOpen} value="24" label="Courses completed" extra="+3 this month" />
-            <Metric icon={Clock3} value="186h" label="Learning time" extra="+18h this week" />
-            <Metric icon={Zap} value="94%" label="Skill score" extra="+7.2%" />
-          </div>
-
-          <div className="section-title"><div><span>01</span><h2>Continue your journey</h2></div><button>View all <ArrowRight size={15}/></button></div>
-          <div className="course-grid">{courses.map(c => <CourseCard key={c.title} {...c}/>)}</div>
-
-          <div className="lower-grid">
-            <section className="app-panel progress-panel"><div className="panel-top"><div><span>LEARNING ANALYTICS</span><h3>Your progress, decoded.</h3></div><button>Last 30 days <ChevronRight size={15}/></button></div><div className="chart"><div className="chart-line"><i/><i/><i/><i/><i/><i/><i/></div><div className="chart-grid"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div><svg viewBox="0 0 700 210" preserveAspectRatio="none"><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4f8cff" stopOpacity=".35"/><stop offset="1" stopColor="#4f8cff" stopOpacity="0"/></linearGradient></defs><path d="M0 172 C80 160 95 128 160 145 S250 110 310 125 S390 72 450 90 S545 48 600 70 S665 30 700 42 L700 210 L0 210 Z" fill="url(#area)"/><path d="M0 172 C80 160 95 128 160 145 S250 110 310 125 S390 72 450 90 S545 48 600 70 S665 30 700 42" fill="none" stroke="#4f8cff" strokeWidth="3"/></svg><div className="chart-months"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>NOW</span></div></div></section>
-            <section className="app-panel readiness-panel"><div className="panel-top"><div><span>AI READINESS</span><h3>Career readiness</h3></div><Sparkles size={18}/></div><div className="readiness-ring"><div><strong>87</strong><small>/100</small></div></div><div className="readiness-copy"><b>You're 3 skills away.</b><span>from your next opportunity</span></div><div className="skill-row"><span>React Architecture</span><b>92%</b></div><div className="skill-row"><span>System Design</span><b>76%</b></div><div className="skill-row"><span>Communication</span><b>68%</b></div></section>
-          </div>
-
-          <section className="opportunity"><div><span>UPNEXT SIGNAL</span><h2>Your learning activity is creating momentum.</h2><p>Keep your current pace for 14 more days and unlock the <b>Advanced Builder</b> achievement.</p></div><div className="signal"><div><Activity size={19}/><b>+12.4%</b><span>velocity</span></div><ArrowRight size={24}/></div></section>
-
-          <footer className="app-footer"><span>UPNEX / LEARN · GROW · SUCCEED</span><span>AI-powered education ecosystem</span></footer>
-        </div>
-      </section>
-    </main>
-  );
+  const topPath = profile.guidance.paths[0];
+  return <main className="main-app">
+    <aside className={`app-sidebar ${open ? "open" : ""}`}><div className="app-brand"><span>U</span><div><b>UPNEX</b><small>SMART EDUCATION</small></div><button className="mobile-close" onClick={() => setOpen(false)}><X size={18} /></button></div><div className="sidebar-label">STUDENT PROFILE</div><nav>{nav.map(([Icon, name, path]) => <Link key={name} className={active === name ? "active" : ""} to={path} onClick={() => { setActive(name); setOpen(false); }}><Icon size={18} /><span>{name}</span>{active === name && <i />}</Link>)}</nav><div className="sidebar-bottom"><Link to="/"><ArrowRight size={18} /> Back to UPNEX</Link></div></aside>
+    <section className="app-content"><header className="app-header"><button className="mobile-menu" onClick={() => setOpen(true)}><Menu size={21} /></button><div className="app-search"><Search size={17} /><input placeholder="Search your profile..." /></div><div className="header-actions"><div className="user-chip"><span>ST</span><div><b>Student</b><small>Student profile</small></div></div></div></header>
+      <div className="app-body profile-body"><div className="app-hero-row"><div><div className="mini-kicker"><span /> YOUR UPNEX PROFILE</div><h1>Turn your work into <em>direction.</em></h1><p>One verified record for your academics, skills and next opportunity.</p></div><div className="readiness-pill"><strong>{profile.readiness}</strong><span>/100 readiness</span></div></div>
+        {message && <div className="profile-message"><CheckCircle2 size={16} /> {message}</div>}
+        <section className="workflow-grid"><WorkflowStep number="01" icon={ShieldCheck} title="Verify" text="Lock academic evidence into your Digital Vault." active={active === "Digital Vault"} onClick={() => setActive("Digital Vault")} /><WorkflowStep number="02" icon={Target} title="Understand" text="See strengths and gaps ranked by subject." active={active === "Subject Analysis"} onClick={() => setActive("Subject Analysis")} /><WorkflowStep number="03" icon={BrainCircuit} title="Navigate" text="Get career paths and skills you still need." active={active === "Career Guidance"} onClick={() => setActive("Career Guidance")} /><WorkflowStep number="04" icon={FolderKanban} title="Share" text="Publish verified proof-of-work for recruiters." active={active === "Live Portfolio"} onClick={() => setActive("Live Portfolio")} /></section>
+        <section className="profile-command"><div><span>UPNEX CAREER SIGNAL</span><h2>{topPath ? `${topPath.title} is your strongest match.` : "Build your academic signal."}</h2><p>{topPath ? `${topPath.match}% match based on your marks and proof-of-work. Close the skill gaps below.` : "Add marks and a project to unlock personalized career guidance."}</p></div><div className="command-score"><Sparkles size={18} /><strong>{topPath?.match || 0}%</strong><small>top match</small></div></section>
+        <div className="profile-columns"><section className="app-panel vault-panel"><PanelHeading icon={ShieldCheck} eyebrow="01 / DIGITAL VAULT" title="Verified evidence" /><label className="upload-zone"><Upload size={22} /><strong>Upload a marksheet or certificate</strong><span>PDF, JPG or PNG · max 10 MB</span><input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={addDocument} /></label><div className="document-list">{profile.documents.length ? profile.documents.map((document) => <div className="document-row" key={document.id}><FileCheck2 size={17} /><div><b>{document.fileName}</b><small>{document.documentType} · {Math.ceil(document.fileSize / 1024)} KB</small></div><span>VERIFIED</span></div>) : <EmptyState text="Your verified documents will appear here." />}</div></section>
+          <section className="app-panel marks-panel"><PanelHeading icon={Target} eyebrow="02 / SUBJECT ANALYSIS" title="Strengths, ranked honestly" /><div className="mark-list">{profile.marks.length ? profile.marks.map((item) => <div className="mark-row" key={item.id}><span>{item.subject}<small>{item.category}</small></span><div><i><b style={{ width: `${item.score}%` }} /></i><strong>{item.score}%</strong></div></div>) : <EmptyState text="Add your first subject score below." />}</div><form className="compact-form" onSubmit={addMark}><input placeholder="Subject" value={mark.subject} onChange={(event) => setMark({ ...mark, subject: event.target.value })} /><input placeholder="Category" value={mark.category} onChange={(event) => setMark({ ...mark, category: event.target.value })} /><input type="number" min="0" max="100" placeholder="Score" value={mark.score} onChange={(event) => setMark({ ...mark, score: event.target.value })} /><button className="icon-button" title="Add subject"><Plus size={16} /></button></form></section></div>
+        <div className="profile-columns lower-profile-columns"><section className="app-panel guidance-panel"><PanelHeading icon={BrainCircuit} eyebrow="03 / CAREER GUIDANCE" title="Paths worth pursuing" />{profile.guidance.paths.map((path) => <div className="path-row" key={path.title}><div><b>{path.title}</b><small>Missing: {path.skills.join(" · ")}</small></div><strong>{path.match}%</strong></div>)}{!profile.guidance.paths.length && <EmptyState text="Your career matches will appear after analysis." />}</section><section className="app-panel portfolio-panel"><PanelHeading icon={FolderKanban} eyebrow="04 / LIVE PORTFOLIO" title="Proof-of-work" /><div className="portfolio-projects">{profile.projects.map((item) => <div className="project-row" key={item.id}><GraduationCap size={17} /><div><b>{item.title}</b><small>{item.skills.join(" · ")}</small></div></div>)}{!profile.projects.length && <EmptyState text="Add a project to make your profile recruiter-ready." />}</div><form className="project-form" onSubmit={addProject}><input placeholder="Project title" value={project.title} onChange={(event) => setProject({ ...project, title: event.target.value })} /><input placeholder="Skills, comma separated" value={project.skills} onChange={(event) => setProject({ ...project, skills: event.target.value })} /><textarea placeholder="What did you build?" value={project.description} onChange={(event) => setProject({ ...project, description: event.target.value })} /><button className="app-primary" type="submit">Add to portfolio <ArrowRight size={15} /></button></form></section></div>
+        <footer className="app-footer"><span>UPNEX / VERIFY · ANALYZE · NAVIGATE · SHARE</span><span>Private by default · controlled by you</span></footer></div></section>
+  </main>;
 }
 
-function Metric({ icon: Icon, value, label, extra }) { return <div className="metric"><div className="metric-icon"><Icon size={18}/></div><div><strong>{value}</strong><span>{label}</span><small>{extra}</small></div></div>; }
-function CourseCard({ title, meta, progress, tag, art }) { return <article className="course-card"><div className={`course-art ${art}`}><div className="art-grid"/><span>{progress}%</span><div className="art-symbol"><BrainCircuit size={28}/></div></div><div className="course-info"><div className="course-tag">{tag}</div><h3>{title}</h3><p>{meta}</p><div className="course-progress"><i style={{ width: `${progress}%` }}/></div><button>Open course <ArrowRight size={15}/></button></div></article>; }
+function WorkflowStep({ number, icon: Icon, title, text, active, onClick }) { return <button className={`workflow-step ${active ? "active" : ""}`} onClick={onClick}><span>{number}</span><Icon size={19} /><div><b>{title}</b><small>{text}</small></div></button>; }
+function PanelHeading({ icon: Icon, eyebrow, title }) { return <div className="panel-top profile-panel-heading"><div><span>{eyebrow}</span><h3>{title}</h3></div><Icon size={18} /></div>; }
+function EmptyState({ text }) { return <div className="empty-state"><Users size={17} />{text}</div>; }

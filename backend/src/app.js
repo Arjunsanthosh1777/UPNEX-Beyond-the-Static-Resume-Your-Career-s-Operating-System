@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
