@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import { ZodError } from "zod";
 import authRoutes from "./routes/authRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
@@ -26,6 +27,16 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/profile", profileRoutes);
 
 app.use((err, req, res, next) => {
+  // Invalid request bodies surface as ZodError from schema.parse(); map them
+  // to a 400 with the offending fields instead of a generic 500.
+  if (err instanceof ZodError) {
+    const fields = err.issues.map((issue) => ({
+      field: issue.path.join(".") || "body",
+      message: issue.message
+    }));
+    return res.status(400).json({ message: "Invalid request data.", fields });
+  }
+
   console.error(err);
   res.status(err.status || 500).json({ message: err.message || "Server error." });
 });

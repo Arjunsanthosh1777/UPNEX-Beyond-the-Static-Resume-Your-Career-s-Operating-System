@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "db:push": "prisma db push",
+    "postinstall": "prisma generate || (echo [!postinstall] prisma generate skipped - engine in use, run npm run db:push after stopping the server & exit 0)",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@prisma/client": "^6.15.0",
@@ -22,6 +26,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
-    "prisma": "^6.15.0"
+    "prisma": "^6.15.0",
+    "vitest": "^3.2.4"
   }
 }

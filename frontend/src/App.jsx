@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import ProfileFeature from "./pages/Profile/ProfileFeature";
 import AuthPage from "./pages/Auth/AuthPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { PrivacyPolicy, TermsOfService } from "./pages/Legal/LegalPages";
 
 function Protected({ children }) {
   return <ProtectedRoute>{children}</ProtectedRoute>;
@@ -15,6 +16,8 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<AuthPage />} />
       <Route path="/register" element={<AuthPage />} />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
       <Route path="/profile/vault" element={<Protected><ProfileFeature type="vault" /></Protected>} />
       <Route path="/profile/analysis" element={<Protected><ProfileFeature type="analysis" /></Protected>} />

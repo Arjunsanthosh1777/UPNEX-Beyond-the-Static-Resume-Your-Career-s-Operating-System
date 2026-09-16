@@ -7,3 +7,5 @@ dist/
 *.db-journal
 coverage/
 .DS_Store
+firebase-debug.log
+*.log

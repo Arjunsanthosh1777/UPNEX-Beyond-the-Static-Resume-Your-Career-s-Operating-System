@@ -26,8 +26,18 @@ function googleClient() {
   );
 }
 
+// Placeholder values (e.g. "your-google-client-id.apps.googleusercontent.com")
+// must not be treated as configured — they break the OAuth redirect flow.
+const PLACEHOLDER_MARKERS = ["your-", "change-me", "changeme", "example", "xxx"];
+function looksLikePlaceholder(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized === "" || PLACEHOLDER_MARKERS.some((marker) => normalized.includes(marker));
+}
+
 function googleIsConfigured() {
-  return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REDIRECT_URI);
+  return [process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI].every(
+    (value) => !looksLikePlaceholder(value)
+  );
 }
 
 export async function register(req, res) {

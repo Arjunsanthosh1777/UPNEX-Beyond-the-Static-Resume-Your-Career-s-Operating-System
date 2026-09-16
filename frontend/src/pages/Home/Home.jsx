@@ -1,103 +1,222 @@
-import { useLayoutEffect, useRef } from "react";
-import { Link } from "react-router-dom";
-import { ArrowDown, ArrowRight, ArrowUpRight, BrainCircuit, ChartNoAxesCombined, Check, CirclePlay, Compass, Cpu, GraduationCap, Layers3, Sparkles, Target, Users, Zap } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Navbar from "../../components/Navbar";
+import { useEffect } from "react";
 
-gsap.registerPlugin(ScrollTrigger);
+function Mark() {
+  return (
+    <svg className="land-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <g transform="rotate(-30 12 12)">
+        <circle cx="7.3" cy="3.2" r="1.45" />
+        <rect x="5.5" y="4.7" width="3.6" height="14.6" rx="1.8" />
+        <rect x="14.9" y="4.7" width="3.6" height="14.6" rx="1.8" />
+        <circle cx="16.7" cy="20.8" r="1.45" />
+      </g>
+    </svg>
+  );
+}
 
-const features = [
-  { icon: BrainCircuit, tag: "01 / AI", title: "Adaptive Intelligence", text: "A learning engine that reads your pace, strengths and gaps, then shapes what comes next." },
-  { icon: ChartNoAxesCombined, tag: "02 / DATA", title: "Progress, decoded", text: "Turn scattered academic activity into a clear visual story of growth, skills and readiness." },
-  { icon: Compass, tag: "03 / PATH", title: "Career navigation", text: "Explore realistic paths, compare skills and discover the moves that take you closer to your goal." },
-  { icon: Users, tag: "04 / PEOPLE", title: "Human guidance", text: "Bring students, faculty, mentors and opportunities into one connected ecosystem." },
-];
-
-const steps = ["LEARN", "PRACTICE", "ANALYZE", "IMPROVE", "ACHIEVE"];
+function Spark() {
+  return (
+    <svg className="land-spark appear" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2.6C12.55 2.6 12.88 3.15 13.08 4.7c.62 4.7 1.52 5.6 6.22 6.22 1.55.2 2.1.53 2.1 1.08s-.55.88-2.1 1.08c-4.7.62-5.6 1.52-6.22 6.22-.2 1.55-.53 2.1-1.08 2.1s-.88-.55-1.08-2.1c-.62-4.7-1.52-5.6-6.22-6.22C3.15 12.88 2.6 12.55 2.6 12s.55-.88 2.1-1.08c4.7-.62 5.6-1.52 6.22-6.22C11.12 3.15 11.45 2.6 12 2.6Z" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function Home() {
-  const root = useRef(null);
+  const closeMobile = () => {
+    const root = document.querySelector(".landing");
+    const burger = root?.querySelector(".land-burger");
+    root?.classList.remove("mobile-open");
+    burger?.setAttribute("aria-expanded", "false");
+    burger?.setAttribute("aria-label", "Open menu");
+  };
 
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".hero-kicker, .hero-title, .hero-copy, .hero-actions, .hero-meta", {
-        y: 35, opacity: 0, duration: 0.9, stagger: 0.1, ease: "power3.out"
+  useEffect(() => {
+    const root = document.querySelector(".landing");
+    const flow = document.querySelector(".land-flow");
+    const finePointer = window.matchMedia("(pointer: fine)").matches;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let raf = 0;
+    const cleanup = () => cancelAnimationFrame(raf);
+
+    if (flow && finePointer && !reduced) {
+      let curX = 0, curY = 0, tx = 0, ty = 0;
+      const onMove = (event) => {
+        tx = (event.clientX / window.innerWidth) * 2 - 1;
+        ty = (event.clientY / window.innerHeight) * 2 - 1;
+      };
+      const tick = () => {
+        curX += (tx - curX) * 0.055;
+        curY += (ty - curY) * 0.055;
+        flow.style.setProperty("--px1", (curX * 22).toFixed(2) + "px");
+        flow.style.setProperty("--py1", (curY * 12).toFixed(2) + "px");
+        flow.style.setProperty("--px2", (curX * 30).toFixed(2) + "px");
+        flow.style.setProperty("--py2", (curY * 16).toFixed(2) + "px");
+        flow.style.setProperty("--px3", (curX * 14).toFixed(2) + "px");
+        flow.style.setProperty("--py3", (curY * 8).toFixed(2) + "px");
+        flow.style.setProperty("--px4", (curX * 9).toFixed(2) + "px");
+        flow.style.setProperty("--py4", (curY * 5).toFixed(2) + "px");
+        raf = requestAnimationFrame(tick);
+      };
+      window.addEventListener("pointermove", onMove, { passive: true });
+      raf = requestAnimationFrame(tick);
+      return () => {
+        window.removeEventListener("pointermove", onMove);
+        cleanup();
+      };
+    }
+
+    const burger = root?.querySelector(".land-burger");
+    const open = () => {
+      root?.classList.add("mobile-open");
+      burger?.setAttribute("aria-expanded", "true");
+      burger?.setAttribute("aria-label", "Close menu");
+    };
+    burger?.addEventListener("click", () => {
+      if (root?.classList.contains("mobile-open")) closeMobile(); else open();
+    });
+    const onKey = (event) => { if (event.key === "Escape") closeMobile(); };
+    document.addEventListener("keydown", onKey);
+
+    if (!reduced) {
+      const appearEls = [...document.querySelectorAll(".appear")];
+      appearEls.forEach((el) => {
+        el.addEventListener("animationend", () => el.classList.add("is-in"), { once: true });
       });
-      gsap.from(".hero-orbit", { scale: 0.82, opacity: 0, rotate: -12, duration: 1.4, ease: "power3.out" });
-      gsap.utils.toArray(".reveal").forEach((el) => {
-        gsap.from(el, {
-          y: 55, opacity: 0, duration: 0.9, ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 82%", once: true }
-        });
-      });
-      gsap.to(".hero-orbit", { y: -28, rotate: 5, ease: "none", scrollTrigger: { trigger: ".hero", scrub: 1 } });
-      gsap.to(".grid-glow", { xPercent: 10, ease: "none", scrollTrigger: { trigger: ".hero", scrub: 1.4 } });
-    }, root);
-    return () => ctx.revert();
+      const fallback = requestAnimationFrame(() => requestAnimationFrame(() => {
+        const anyActive = appearEls.some((el) => (el.getAnimations ? el.getAnimations() : []).length > 0);
+        if (!anyActive) appearEls.forEach((el) => el.classList.add("is-in"));
+      }));
+      return () => {
+        document.removeEventListener("keydown", onKey);
+        cancelAnimationFrame(fallback);
+        cleanup();
+      };
+    }
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      cleanup();
+    };
   }, []);
 
   return (
-    <main ref={root} className="upnex-home">
-      <Navbar />
+    <div className="landing">
+      <div className="land-backdrop" aria-hidden="true">
+        <svg className="land-flow" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="land-ln-w" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
+              <stop offset="0.5" stopColor="#ffffff" stopOpacity="1" />
+              <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="land-ln-w2" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
+              <stop offset="0.5" stopColor="#ffffff" stopOpacity="0.8" />
+              <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="land-ln-p" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#8b5cf6" stopOpacity="0" />
+              <stop offset="0.5" stopColor="#8b5cf6" stopOpacity="1" />
+              <stop offset="1" stopColor="#8b5cf6" stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-      <section className="hero" id="home">
-        <div className="grid-glow" />
-        <div className="hero-left">
-          <div className="hero-kicker"><span /> SMART EDUCATION ECOSYSTEM <b>01</b></div>
-          <h1 className="hero-title">Your future<br /><em>shouldn't</em><br />be a guess.</h1>
-          <p className="hero-copy">Turn your academic data, skills and goals into a clear path forward — with AI, real-world opportunities and guidance built around you.</p>
-          <div className="hero-actions">
-            <Link className="btn btn-primary" to="/login"><GraduationCap size={18} /> Explore UPNEX <ArrowUpRight size={17} /></Link>
-            <a className="btn btn-ghost" href="#intelligence"><CirclePlay size={17} /> See how it works</a>
-          </div>
-          <div className="hero-meta"><span><strong>10K+</strong> learners</span><i /> <span><strong>500+</strong> learning paths</span><i /> <span><strong>95%</strong> satisfaction</span></div>
+          <g className="flow-g1">
+            <path className="ribbon r--blob" d="M -260 320 C 40 220 520 180 840 270 C 1160 360 1460 260 1860 330 C 1860 580 1480 660 1080 610 C 680 560 160 640 -260 560 Z" />
+            <path className="ribbon r--floor" d="M -240 790 C 320 710 720 850 1140 760 C 1560 670 1700 780 1880 820 L 1880 950 L -240 950 Z" />
+          </g>
+
+          <g className="flow-g2">
+            <path className="ribbon r--p" d="M 1900 720 C 1500 640 1260 400 880 480 C 520 556 260 760 -300 700" />
+            <path className="ribbon r--core-p" d="M 1900 720 C 1500 640 1260 400 880 480 C 520 556 260 760 -300 700" />
+          </g>
+
+          <g className="flow-g3">
+            <path className="ribbon r--w2" d="M -220 640 C 300 560 700 700 1120 600 C 1460 520 1720 620 1900 560" />
+            <path className="ribbon r--silk" d="M -200 380 C 300 260 700 480 1100 360 C 1450 260 1800 420 1900 400" />
+          </g>
+
+          <g className="flow-g4">
+            <path className="ribbon r--w1" d="M -260 140 C 160 60 400 340 800 280 C 1200 220 1500 60 1860 150" />
+            <path className="ribbon r--core-w" d="M -260 140 C 160 60 400 340 800 280 C 1200 220 1500 60 1860 150" />
+            <path className="ribbon r--thin" d="M -240 128 C 170 48 410 328 810 268 C 1210 208 1510 48 1870 138" />
+          </g>
+        </svg>
+      </div>
+
+      <div className="land-grain" aria-hidden="true" />
+
+      <header className="land-header">
+        <a className="land-logo appear" href="/" aria-label="UPNEX.ai home">
+          <Mark />
+          <span>UPNEX<span className="suffix">.ai</span></span>
+        </a>
+
+        <a className="land-cta appear" href="/register">Start for Free</a>
+
+        <button className="land-burger" type="button" aria-expanded="false" aria-controls="land-menu" aria-label="Open menu">
+          <span />
+          <span />
+          <span />
+        </button>
+      </header>
+
+      <main className="land-hero">
+        <div className="land-halo" aria-hidden="true" />
+        <div className="land-badge appear">
+          <Spark />
+          Student Intelligence Platform
         </div>
 
-        <div className="hero-right">
-          <div className="hero-orbit">
-            <div className="orbit-ring ring-a" /><div className="orbit-ring ring-b" /><div className="orbit-ring ring-c" />
-            <div className="core"><Sparkles size={24} /><span>UPNEX</span><small>INTELLIGENCE CORE</small></div>
-            <div className="float-card fc-one"><Zap size={15} /><div><b>+24%</b><small>skill velocity</small></div></div>
-            <div className="float-card fc-two"><Target size={15} /><div><b>87%</b><small>career match</small></div></div>
-            <div className="float-card fc-three"><Cpu size={15} /><div><b>AI READY</b><small>next move found</small></div></div>
-          </div>
-          <div className="hero-side-note">TURN DATA<br /><strong>INTO</strong><br />DIRECTION.</div>
+        <h1 className="land-title">
+          <span className="land-line"><span className="appear">Stop listing skills.</span></span>
+          <span className="land-line"><span className="appear">Start <em className="appear">proving</em> them.</span></span>
+        </h1>
+
+        <p className="land-lede appear">
+          UPNEX turns academic marks, projects and certificates into one living, verifiable
+          profile — and uses the evidence to map the career paths you should actually pursue.
+        </p>
+
+        <div className="land-cta-row">
+          <a className="land-btn land-btn--solid appear" href="/register">Start for Free</a>
+          <a className="land-btn land-btn--ghost appear" href="/login">Sign In</a>
         </div>
-        <a href="#problem" className="scroll-cue"><span>SCROLL TO EXPLORE</span><ArrowDown size={15} /></a>
-      </section>
+      </main>
 
-      <section className="problem section" id="problem">
-        <div className="section-number">02</div>
-        <div className="section-kicker reveal"><span /> THE PROBLEM</div>
-        <div className="problem-grid">
-          <div className="reveal"><h2>Students have potential<br />but <em>no clear direction.</em></h2><p className="large-copy">Too much information. Too many options. Not enough clarity.</p></div>
-          <div className="problem-card reveal"><div className="radar"><div className="radar-line" /><div className="radar-dot d1" /><div className="radar-dot d2" /><div className="radar-dot d3" /><div className="radar-core">?</div></div><div className="question q1">Which career?</div><div className="question q2">What skills?</div><div className="question q3">Am I ready?</div><div className="question q4">What's next?</div></div>
-        </div>
-        <div className="problem-bottom reveal"><span>01 — CONFUSING CAREER PATHS</span><span>02 — DISCONNECTED RESOURCES</span><span>03 — LACK OF REAL GUIDANCE</span><a href="#intelligence">See the UPNEX approach <ArrowRight size={15} /></a></div>
-      </section>
+      <footer className="land-stats">
+        <span className="land-stat appear">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 2.9l7 2.5v5.4c0 4.3-2.6 7.6-7 9.3-4.4-1.7-7-5-7-9.3V5.4z" />
+            <path d="M9 11.7l2 2 4-4" />
+          </svg>
+          Verifiable proof-of-work
+        </span>
+        <span className="land-stat appear">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="6" cy="18" r="2.2" />
+            <circle cx="18" cy="6" r="2.2" />
+            <path d="M8.2 18c4-1.5 5.9-5.2 6.5-8.4" />
+          </svg>
+          AI-driven career pathing
+        </span>
+        <span className="land-stat appear">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3.5 7.2l8.5-3.7 8.5 3.7-8.5 3.7z" />
+            <path d="M3.5 7.2v9.3l8.5 3.8 8.5-3.8V7.2" />
+            <path d="M3.5 7.2l8.5 3.8 8.5-3.8M12 11v10" />
+          </svg>
+          Secure credential vault
+        </span>
+      </footer>
 
-      <section className="intelligence section" id="intelligence">
-        <div className="section-number">03</div>
-        <div className="vision-head reveal"><div><div className="section-kicker"><span /> OUR VISION</div><h2>A smarter way to<br /><em>shape your tomorrow.</em></h2></div><p>UPNEX combines AI, data and real-world opportunities to give you personalized guidance for academics, skills and careers.</p></div>
-        <div className="feature-grid">
-          {features.map(({ icon: Icon, tag, title, text }) => <article className="feature-card reveal" key={title}><div className="feature-icon"><Icon size={21} /></div><small>{tag}</small><h3>{title}</h3><p>{text}</p><ArrowUpRight className="feature-arrow" size={19} /></article>)}
-        </div>
-      </section>
-
-      <section className="ecosystem section" id="ecosystem">
-        <div className="section-number">04</div>
-        <div className="ecosystem-top reveal"><div><div className="section-kicker"><span /> THE ECOSYSTEM</div><h2>One loop.<br /><em>Endless growth.</em></h2></div><p>Learning should never be a collection of disconnected tabs. UPNEX turns every action into the next opportunity.</p></div>
-        <div className="journey reveal">{steps.map((step, i) => <div className="journey-step" key={step}><div className="journey-no">0{i + 1}</div><div className="journey-dot">{i === 4 ? <Check size={15} /> : i + 1}</div><b>{step}</b><span>{["Access knowledge that fits you", "Apply it in real situations", "See exactly where you stand", "Get your next best move", "Unlock your potential"][i]}</span></div>)}</div>
-        <div className="ecosystem-panel reveal"><div className="panel-glow" /><div className="panel-title"><Layers3 size={18} /> UPNEX / LIVE LEARNING MAP</div><div className="map-score"><small>READINESS SCORE</small><strong>87<span>/100</span></strong><div className="progress"><i /></div><b>+12.4% this month</b></div><div className="map-nodes"><span className="active">AI</span><i /><span>DS</span><i /><span>UX</span><i /><span className="active">PM</span></div><div className="map-label">Your next opportunity is<br /><strong>3 skills away.</strong></div></div>
-      </section>
-
-      <section className="impact section" id="community">
-        <div className="impact-inner reveal"><div className="section-kicker"><span /> THE IMPACT</div><h2>Real guidance.<br /><em>Real opportunities.</em></h2><p>Built for the generation that refuses to let uncertainty decide what comes next.</p><div className="stats"><div><strong>10K<span>+</span></strong><small>LEARNERS</small></div><div><strong>500<span>+</span></strong><small>PATHS</small></div><div><strong>100<span>+</span></strong><small>INSTITUTIONS</small></div><div><strong>95<span>%</span></strong><small>SATISFACTION</small></div></div><Link to="/dashboard" className="btn btn-light">Start your next chapter <ArrowUpRight size={17} /></Link></div>
-        <div className="impact-orb"><div /><div /><div /><span>THE FUTURE<br /><b>BELONGS TO</b><br />THE PREPARED.</span></div>
-      </section>
-
-      <footer className="footer"><div><a className="footer-logo" href="#home">UPNEX</a><small>SMART EDUCATION ECOSYSTEM</small></div><div className="footer-links"><a href="#home">Home</a><a href="#problem">About</a><a href="#intelligence">Intelligence</a><a href="#ecosystem">Ecosystem</a></div><div className="footer-end">LEARN <span>•</span> GROW <span>•</span> SUCCEED</div></footer>
-    </main>
+      <div className="land-mobile" id="land-menu" onClick={(event) => { if (event.target === event.currentTarget) closeMobile(); }}>
+        <a href="/login" onClick={closeMobile}>Sign In</a>
+        <a href="/register" onClick={closeMobile}>Get Started</a>
+        <a href="/register" onClick={closeMobile} className="land-btn land-btn--solid land-mobile-cta">Start for Free</a>
+        <button type="button" className="land-mobile-x" aria-label="Close menu" onClick={closeMobile}>×</button>
+      </div>
+    </div>
   );
 }
