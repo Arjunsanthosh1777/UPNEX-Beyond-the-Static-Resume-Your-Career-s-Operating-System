@@ -1,4 +1,7 @@
-# Exported from Render on 2026-09-21T11:07:12Z
+# UPNEX on Render — free Docker web service (Express API + React SPA in one image).
+# Creating a new "Blueprint"-based service from this file prompts for the two
+# required secrets below (DATABASE_URL, JWT_SECRET). Optional extras (Cloudflare
+# R2, SMTP, Firebase Admin) can be added via the service's Environment tab later.
 version: "1"
 services:
 - type: web
@@ -6,15 +9,20 @@ services:
   runtime: docker
   repo: https://github.com/Arjunsanthosh1777/UPNEX-Beyond-the-Static-Resume-Your-Career-s-Operating-System
   plan: free
-  envVars:
-  - key: COOKIE_SECURE
-    sync: false
-  - key: PORT
-    sync: false
-  - key: NODE_ENV
-    sync: false
   region: oregon
   healthCheckPath: /api/health
   dockerContext: .
   dockerfilePath: ./Dockerfile
   autoDeployTrigger: commit
+  envVars:
+  - key: NODE_ENV
+    value: production
+  - key: PORT
+    value: "10000"
+  - key: COOKIE_SECURE
+    value: "true"
+  # Required secrets — Render prompts for these at service creation.
+  - key: DATABASE_URL
+    sync: false
+  - key: JWT_SECRET
+    sync: false
