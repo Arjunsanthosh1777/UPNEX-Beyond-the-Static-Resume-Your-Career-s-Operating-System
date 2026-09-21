@@ -1,0 +1,51 @@
+type Student @table {
+  fullName: String!
+  email: String!
+  careerGoal: String!
+  bio: String
+  linkedInUrl: String
+}
+
+type Project @table {
+  title: String!
+  description: String!
+  repositoryUrl: String!
+  completionDate: Date
+  imageUrl: String
+  student: Student!
+}
+
+type Skill @table {
+  name: String!
+  category: String!
+}
+
+type ProjectSkill @table(key: ["project", "skill"]) {
+  project: Project!
+  skill: Skill!
+}
+
+type Credential @table {
+  issuerName: String!
+  issueDate: Date!
+  verificationStatus: String!
+  expiryDate: Date
+  documentUrl: String
+  student: Student!
+}
+
+type Insight @table {
+  recommendationText: String!
+  targetRole: String!
+  confidenceScore: Float
+  student: Student!
+}
+
+type Verification @table {
+  validatorName: String!
+  validatorEmail: String!
+  status: String!
+  comments: String
+  project: Project
+  credential: Credential
+}

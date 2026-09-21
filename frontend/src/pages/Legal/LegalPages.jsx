@@ -1,12 +1,14 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 function LegalShell({ title, updated, children }) {
+  const { t } = useTranslation();
   return (
     <main className="legal-page">
       <div className="legal-wrap">
-        <Link className="back" to="/">← Back to UPNEX</Link>
+        <Link className="back" to="/">← {t("common.backToUpnex", "Back to UPNEX")}</Link>
         <h1>{title}</h1>
-        <p className="updated">Last updated: {updated}</p>
+        <p className="updated">{t("legal.lastUpdated", "Last updated: ")}{updated}</p>
         {children}
       </div>
     </main>
@@ -14,8 +16,9 @@ function LegalShell({ title, updated, children }) {
 }
 
 export function TermsOfService() {
+  const { t } = useTranslation();
   return (
-    <LegalShell title="Terms of Service" updated="September 16, 2026">
+    <LegalShell title={t("legal.termsTitle", "Terms of Service")} updated="September 16, 2026">
       <p>These Terms of Service ("Terms") govern your use of UPNEX ("the Service"). By creating an account or using the Service you agree to these Terms.</p>
       <h2>1. Accounts</h2>
       <p>You are responsible for keeping your credentials confidential and for all activity under your account. You must provide accurate information when creating an account.</p>
@@ -38,8 +41,9 @@ export function TermsOfService() {
 }
 
 export function PrivacyPolicy() {
+  const { t } = useTranslation();
   return (
-    <LegalShell title="Privacy Policy" updated="September 16, 2026">
+    <LegalShell title={t("legal.privacyTitle", "Privacy Policy")} updated="September 16, 2026">
       <p>This Privacy Policy explains what data UPNEX collects, why we collect it, and the control you have over it.</p>
       <h2>1. What we collect</h2>
       <p>We collect the information you provide: name, email address, and the academic marks, projects, documents and profile links you choose to add. If you sign in with Google, we receive your name, email and profile picture with your permission.</p>
@@ -57,4 +61,10 @@ export function PrivacyPolicy() {
       <p>Privacy questions can be sent to <a href="mailto:support@upnex.ai">support@upnex.ai</a>.</p>
     </LegalShell>
   );
+}
+
+// Default export so App.jsx can lazy-load the whole legal bundle and pick the
+// page from the route: <LegalPages active="terms|privacy" />
+export default function LegalPages({ active = "terms" }) {
+  return active === "privacy" ? <PrivacyPolicy /> : <TermsOfService />;
 }

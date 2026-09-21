@@ -7,5 +7,18 @@ dist/
 *.db-journal
 coverage/
 .DS_Store
+storage/
 firebase-debug.log
 *.log
+# Firebase Admin service account keys must never be committed. Store the file
+# outside the repo and point GOOGLE_APPLICATION_CREDENTIALS at it, or use the
+# FIREBASE_SERVICE_ACCOUNT_JSON env var.
+*service-account*.json
+*firebase-adminsdk*.json
+.firebase/
+# Local tooling / scratch that must not reach the repo
+*.log.err
+.vscode/
+170707/
+# Firebase Data Connect emulator stores a local PostgreSQL data dir here
+dataconnect/.dataconnect/

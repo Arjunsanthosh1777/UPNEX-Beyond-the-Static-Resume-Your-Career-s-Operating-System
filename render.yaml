@@ -1,0 +1,69 @@
+# Render Blueprint: deploys the whole UPNEX app (Express API + React SPA) on
+# Render's free Docker web service, backed by a free Neon Postgres database and
+# a free Cloudflare R2 bucket for uploads.
+#
+# Before deploying:
+#   1. Create a Postgres database on neon.tech  -> copy its connection string
+#   2. Create an R2 bucket in Cloudflare, plus R2 API tokens (Object Read &
+#      Write) with that bucket scoped
+#   3. (Optional but recommended) set up SMTP from a free plan (Brevo/Resend)
+#      so notification emails actually deliver
+#
+# Then push this repo to GitHub and use Render -> New -> Blueprint, or recreate
+# the same service manually in the dashboard. Every `sync: false` value is
+# prompted at deploy time and stored in Render's secret vault — never in git.
+#
+# The free plan's Docker instances idle after 15 minutes and sleep on the next
+# request — normal for showcase deployments.
+
+services:
+  - type: web
+    name: upnex
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: COOKIE_SECURE
+        value: "true"
+      # CLIENT_URL is auto-derived from RENDER_EXTERNAL_URL (set by Render to this
+      # service's https://*.onrender.com URL), so it is intentionally NOT set here.
+      # --- secrets (prompted at deploy time, stored in Render's vault) ---
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      # --- Cloudflare R2 object storage (uploads live here, not disk) ---
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: STORAGE_DIR
+        sync: false
+      # --- SMTP for real notification emails (Brevo / Resend free tier) ---
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_FROM_NAME
+        sync: false
+      # --- Firebase Admin SDK (optional; ID tokens verify via public keys
+      #     without it, but the service account enables admin operations) ---
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false

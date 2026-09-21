@@ -11,7 +11,11 @@ const OPTIONAL_GROUPS = [
     label: "Google sign-in",
     vars: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REDIRECT_URI"]
   },
-  { label: "CORS / frontend origin", vars: ["CLIENT_URL"] }
+  { label: "CORS / frontend origin", vars: ["CLIENT_URL"] },
+  {
+    label: "Firebase Admin SDK (POST /api/auth/firebase falls back to public-key verification without it)",
+    vars: ["FIREBASE_SERVICE_ACCOUNT_JSON", "GOOGLE_APPLICATION_CREDENTIALS"]
+  }
 ];
 
 function isMissing(name) {

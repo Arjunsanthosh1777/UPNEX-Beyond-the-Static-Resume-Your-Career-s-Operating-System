@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -16,12 +16,28 @@ enum Role {
 model User {
   id          String       @id @default(cuid())
   name        String
+  username    String?      @unique
+  bio         String?
   email       String       @unique
   passwordHash String
   role        Role         @default(STUDENT)
   avatar      String?
   githubUrl   String?
   linkedinUrl String?
+  preferredLanguage String?
+  headline    String?
+  location    String?
+  availability String?
+  coverUrl    String?
+  profilePublic Boolean    @default(true)
+  privacy     Json?
+  education   Json?
+  skills      Json?
+  targetRole  String?
+  careerGoal  String?
+  interests   Json?
+  openTo      Json?
+  social      Json?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   enrollments Enrollment[]
@@ -30,6 +46,13 @@ model User {
   documents   VaultDocument[]
   marks       AcademicMark[]
   projects    Project[]
+  experiences ProfileExperience[]
+  learnings   ProfileLearning[]
+  achievements Achievement[]
+  profileEvents ProfileEvent[]
+  notifications Notification[]
+  outboxEmails  OutboxEmail[]
+  emailPrefs    Json?
 }
 
 model Course {
@@ -100,14 +123,23 @@ model AssessmentResult {
 }
 
 model VaultDocument {
-  id           String   @id @default(cuid())
-  userId       String
-  fileName     String
-  documentType String
-  fileSize     Int
-  verified     Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String    @id @default(cuid())
+  userId         String
+  fileName       String
+  documentType   String
+  fileSize       Int
+  mime           String?
+  originalName   String?
+  storageKey     String?   @unique
+  verified       Boolean   @default(false)
+  verificationId String?
+  issuer         String?
+  ocrText        String?
+  downloadCount  Int       @default(0)
+  previewCount   Int       @default(0)
+  lastAccessedAt DateTime?
+  createdAt      DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }
@@ -132,8 +164,116 @@ model Project {
   description String
   skills      Json
   proofUrl    String?
+  featured    Boolean  @default(false)
+  thumbnailUrl String?
+  demoUrl     String?
+  repoUrl     String?
+  status      String?
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+model ProfileExperience {
+  id          String   @id @default(cuid())
+  userId      String
+  role        String
+  company     String
+  type        String   @default("internship")
+  startDate   String?
+  endDate     String?
+  current     Boolean  @default(false)
+  description String?
+  skills      Json?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sortOrder])
+}
+
+model ProfileLearning {
+  id          String   @id @default(cuid())
+  userId      String
+  topic       String
+  category    String?
+  progress    Int      @default(0)
+  startDate   String?
+  targetDate  String?
+  resource    String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Achievement {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String
+  organization String?
+  category     String   @default("competition")
+  date         String?
+  description  String?
+  proofUrl     String?
+  imageUrl     String?
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// In-app notification for a user. Type drives the icon and (optionally) a deep
+// link through the app; readAt flips the unread badge.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String?
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+// Outbound mail ledger: every email UPNEX sends is recorded here. With SMTP
+// env configured the row is handed to a transport and marked sent; without one
+// it is marked "logged" and appended to backend/logs/emails.log so the whole
+// flow stays testable offline.
+model OutboxEmail {
+  id        String    @id @default(cuid())
+  userId    String?
+  to        String
+  subject   String
+  html      String?
+  status    String    @default("queued")
+  sentAt    DateTime?
+  error     String?
+  createdAt DateTime  @default(now())
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+// One row per public interaction with a profile. Only anon-friendly facts are
+// stored (kind + optional ref) — the owner's analytics are derived from these.
+model ProfileEvent {
+  id            String   @id @default(cuid())
+  userId        String
+  kind          String
+  refId         String?
+  refType       String?
+  actorUsername String?
+  meta          Json?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, kind, createdAt])
 }

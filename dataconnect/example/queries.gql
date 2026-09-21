@@ -1,0 +1,127 @@
+mutation CreateStudent @auth(level: USER) {
+  student_insert(data: { id_expr: "auth.uid", fullName: "John Doe", email: "john@example.com", careerGoal: "Software Engineer" })
+}
+
+mutation UpdateStudent @auth(level: USER) {
+  student_update(key: { id_expr: "auth.uid" }, data: { bio: "Updated bio" })
+}
+
+mutation DeleteStudent @auth(level: USER) {
+  student_delete(key: { id_expr: "auth.uid" })
+}
+
+query GetStudent @auth(level: USER) {
+  student(key: { id_expr: "auth.uid" }) { fullName email careerGoal }
+}
+
+query ListStudents @auth(level: PUBLIC, insecureReason: "Public list of students for directory.") {
+  students { fullName careerGoal }
+}
+
+mutation CreateProject @auth(level: USER) {
+  project_insert(data: { title: "App", description: "Desc", repositoryUrl: "url", student: { id_expr: "auth.uid" } })
+}
+
+mutation UpdateProject @auth(level: USER) {
+  project_update(key: { id: "00000000-0000-0000-0000-000000000000" }, data: { description: "Updated" })
+}
+
+mutation DeleteProject @auth(level: USER) {
+  project_delete(key: { id: "00000000-0000-0000-0000-000000000000" })
+}
+
+query GetProject @auth(level: PUBLIC, insecureReason: "Project details are public.") {
+  project(id: "00000000-0000-0000-0000-000000000000") { title description }
+}
+
+query ListProjects @auth(level: PUBLIC, insecureReason: "Public project list.") {
+  projects { title }
+}
+
+mutation CreateSkill @auth(level: USER) {
+  skill_insert(data: { name: "GraphQL", category: "Tech" })
+}
+
+mutation UpdateSkill @auth(level: USER) {
+  skill_update(id: "00000000-0000-0000-0000-000000000000", data: { category: "Development" })
+}
+
+mutation DeleteSkill @auth(level: USER) {
+  skill_delete(id: "00000000-0000-0000-0000-000000000000")
+}
+
+query GetSkill @auth(level: PUBLIC, insecureReason: "Skills are public.") {
+  skill(id: "00000000-0000-0000-0000-000000000000") { name category }
+}
+
+query ListSkills @auth(level: PUBLIC, insecureReason: "Public skill list.") {
+  skills { name }
+}
+
+mutation AddProjectSkill @auth(level: USER) {
+  projectSkill_insert(data: { projectId: "00000000-0000-0000-0000-000000000000", skillId: "00000000-0000-0000-0000-000000000000" })
+}
+
+mutation DeleteProjectSkill @auth(level: USER) {
+  projectSkill_delete(key: { projectId: "00000000-0000-0000-0000-000000000000", skillId: "00000000-0000-0000-0000-000000000000" })
+}
+
+mutation CreateCredential @auth(level: USER) {
+  credential_insert(data: { issuerName: "Google", issueDate: "2023-01-01", verificationStatus: "Verified", studentId_expr: "auth.uid" })
+}
+
+mutation UpdateCredential @auth(level: USER) {
+  credential_update(key: { id: "00000000-0000-0000-0000-000000000000" }, data: { verificationStatus: "Expired" })
+}
+
+mutation DeleteCredential @auth(level: USER) {
+  credential_delete(key: { id: "00000000-0000-0000-0000-000000000000" })
+}
+
+query GetCredential @auth(level: USER) {
+  credential(key: { id: "00000000-0000-0000-0000-000000000000" }) { issuerName verificationStatus }
+}
+
+query ListCredentials @auth(level: USER) {
+  credentials(where: { studentId: { eq_expr: "auth.uid" } }) { issuerName }
+}
+
+mutation CreateInsight @auth(level: USER) {
+  insight_insert(data: { recommendationText: "Focus on UI", targetRole: "Frontend", studentId_expr: "auth.uid" })
+}
+
+mutation UpdateInsight @auth(level: USER) {
+  insight_update(key: { id: "00000000-0000-0000-0000-000000000000" }, data: { confidenceScore: 0.95 })
+}
+
+mutation DeleteInsight @auth(level: USER) {
+  insight_delete(key: { id: "00000000-0000-0000-0000-000000000000" })
+}
+
+query GetInsight @auth(level: USER) {
+  insight(key: { id: "00000000-0000-0000-0000-000000000000" }) { recommendationText }
+}
+
+query ListInsights @auth(level: USER) {
+  insights(where: { studentId: { eq_expr: "auth.uid" } }) { recommendationText }
+}
+
+mutation CreateVerification @auth(level: USER) {
+  verification_insert(data: { validatorName: "Admin", validatorEmail: "admin@example.com", status: "Pending" })
+}
+
+mutation UpdateVerification @auth(level: USER) {
+  verification_update(key: { id: "00000000-0000-0000-0000-000000000000" }, data: { status: "Approved" })
+}
+
+mutation DeleteVerification @auth(level: USER) {
+  verification_delete(key: { id: "00000000-0000-0000-0000-000000000000" })
+}
+
+query GetVerification @auth(level: PUBLIC, insecureReason: "Verification public record.") {
+  verification(key: { id: "00000000-0000-0000-0000-000000000000" }) { status validatorName }
+}
+
+query ListVerifications @auth(level: PUBLIC, insecureReason: "Public list of verifications.") {
+  verifications { status }
+}

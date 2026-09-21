@@ -1,0 +1,16 @@
+# Local development database — mirrors the production Postgres setup.
+# Start with:  docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: upnex-postgres
+    environment:
+      POSTGRES_USER: upnex
+      POSTGRES_PASSWORD: upnex
+      POSTGRES_DB: upnex
+    ports:
+      - "5432:5432"
+    volumes:
+      - upnex-pgdata:/var/lib/postgresql/data
+volumes:
+  upnex-pgdata:

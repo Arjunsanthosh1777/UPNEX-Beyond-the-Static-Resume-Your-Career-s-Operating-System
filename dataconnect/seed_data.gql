@@ -1,0 +1,67 @@
+mutation CreateDemoData @transaction {
+  student_insertMany(data: [
+    {
+      id: "770e8400-e29b-41d4-a716-446655440001",
+      fullName: "Alice Smith",
+      email: "alice@example.com",
+      careerGoal: "Software Engineer"
+    },
+    {
+      id: "770e8400-e29b-41d4-a716-446655440002",
+      fullName: "Bob Jones",
+      email: "bob@example.com",
+      careerGoal: "Data Scientist"
+    }
+  ])
+  project_insertMany(data: [
+    {
+      id: "880e8400-e29b-41d4-a716-446655440001",
+      title: "Portfolio Website",
+      description: "A personal showcase site",
+      repositoryUrl: "https://github.com/alice/portfolio",
+      studentId: "770e8400-e29b-41d4-a716-446655440001"
+    },
+    {
+      id: "880e8400-e29b-41d4-a716-446655440002",
+      title: "ML Analysis Tool",
+      description: "Data processing utility",
+      repositoryUrl: "https://github.com/bob/ml-tool",
+      studentId: "770e8400-e29b-41d4-a716-446655440002"
+    }
+  ])
+  skill_insertMany(data: [
+    { id: "990e8400-e29b-41d4-a716-446655440001", name: "React", category: "Frontend" },
+    { id: "990e8400-e29b-41d4-a716-446655440002", name: "Python", category: "Backend" }
+  ])
+  projectSkill_insertMany(data: [
+    { projectId: "880e8400-e29b-41d4-a716-446655440001", skillId: "990e8400-e29b-41d4-a716-446655440001" },
+    { projectId: "880e8400-e29b-41d4-a716-446655440002", skillId: "990e8400-e29b-41d4-a716-446655440002" }
+  ])
+  credential_insertMany(data: [
+    {
+      id: "660e8400-e29b-41d4-a716-446655440001",
+      issuerName: "Google",
+      issueDate: "2023-01-01",
+      verificationStatus: "Verified",
+      studentId: "770e8400-e29b-41d4-a716-446655440001"
+    }
+  ])
+  insight_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      recommendationText: "Focus on distributed systems",
+      targetRole: "Backend Engineer",
+      confidenceScore: 0.95,
+      studentId: "770e8400-e29b-41d4-a716-446655440001"
+    }
+  ])
+  verification_insertMany(data: [
+    {
+      id: "440e8400-e29b-41d4-a716-446655440001",
+      validatorName: "Admin User",
+      validatorEmail: "admin@example.com",
+      status: "Approved",
+      projectId: "880e8400-e29b-41d4-a716-446655440001"
+    }
+  ])
+}

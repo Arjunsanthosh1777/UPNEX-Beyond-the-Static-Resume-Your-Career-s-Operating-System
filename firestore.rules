@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// UPNEX Firestore security rules.
+//
+// Default-deny: nothing is readable or writable unless a rule below allows it.
+// The previous starter rule granted the whole internet read/write/delete on
+// every document until Oct 2026 — it has been replaced.
+//
+// NOTE: UPNEX currently stores its data in the Express + Prisma/SQLite backend
+// (see backend/prisma/schema.prisma), not in Firestore. These rules exist so
+// that enabling Firestore later starts from a secure baseline rather than from
+// an open database.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Per-user data. Each user may read and write only their own document.
+    // Ownership is the document id matching the authenticated uid, which is
+    // the safest shape: a client cannot even attempt to address another
+    // user's record.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Nested collections under a user inherit the same ownership check.
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Shared, publicly-readable content (courses, lessons, assessments).
+    // Anyone may read; only authenticated admins may modify.
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.token.admin == true;
+    }
+
+    // Everything not matched above is denied by default.
+  }
+}
+

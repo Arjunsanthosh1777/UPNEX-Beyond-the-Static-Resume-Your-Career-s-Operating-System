@@ -6,7 +6,15 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://localhost:5000"
+      "/api": "http://localhost:5000",
+      "/og": "http://localhost:5000"
+    }
+  },
+  preview: {
+    port: 4173,
+    proxy: {
+      "/api": "http://localhost:5000",
+      "/og": "http://localhost:5000"
     }
   }
 });

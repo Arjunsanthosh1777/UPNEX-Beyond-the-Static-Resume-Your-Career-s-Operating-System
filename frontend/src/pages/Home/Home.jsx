@@ -1,17 +1,8 @@
 import { useEffect } from "react";
-
-function Mark() {
-  return (
-    <svg className="land-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <g transform="rotate(-30 12 12)">
-        <circle cx="7.3" cy="3.2" r="1.45" />
-        <rect x="5.5" y="4.7" width="3.6" height="14.6" rx="1.8" />
-        <rect x="14.9" y="4.7" width="3.6" height="14.6" rx="1.8" />
-        <circle cx="16.7" cy="20.8" r="1.45" />
-      </g>
-    </svg>
-  );
-}
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
+import ThemeSwitcher from "../../components/ThemeSwitcher";
+import { Mark } from "../../components/Logo";
 
 function Spark() {
   return (
@@ -22,12 +13,13 @@ function Spark() {
 }
 
 export default function Home() {
+  const { t } = useTranslation();
   const closeMobile = () => {
     const root = document.querySelector(".landing");
     const burger = root?.querySelector(".land-burger");
     root?.classList.remove("mobile-open");
     burger?.setAttribute("aria-expanded", "false");
-    burger?.setAttribute("aria-label", "Open menu");
+    burger?.setAttribute("aria-label", t("home.openMenu", "Open menu"));
   };
 
   useEffect(() => {
@@ -148,14 +140,18 @@ export default function Home() {
       <div className="land-grain" aria-hidden="true" />
 
       <header className="land-header">
-        <a className="land-logo appear" href="/" aria-label="UPNEX.ai home">
+        <a className="land-logo appear" href="/" aria-label={t("home.homeAria", "UPNEX home")}>
           <Mark />
-          <span>UPNEX<span className="suffix">.ai</span></span>
+          <span>UPNEX</span>
         </a>
 
-        <a className="land-cta appear" href="/register">Start for Free</a>
+        <div className="land-header-actions">
+          <LanguageSwitcher />
+          <ThemeSwitcher />
+          <a className="land-cta appear" href="/register">{t("home.startForFree", "Start for Free")}</a>
+        </div>
 
-        <button className="land-burger" type="button" aria-expanded="false" aria-controls="land-menu" aria-label="Open menu">
+        <button className="land-burger" type="button" aria-expanded="false" aria-controls="land-menu" aria-label={t("home.openMenu", "Open menu")}>
           <span />
           <span />
           <span />
@@ -166,22 +162,21 @@ export default function Home() {
         <div className="land-halo" aria-hidden="true" />
         <div className="land-badge appear">
           <Spark />
-          Student Intelligence Platform
+          {t("home.subline", "Student Intelligence Platform")}
         </div>
 
         <h1 className="land-title">
-          <span className="land-line"><span className="appear">Stop listing skills.</span></span>
-          <span className="land-line"><span className="appear">Start <em className="appear">proving</em> them.</span></span>
+          <span className="land-line"><span className="appear">{t("home.heroLead", "Stop listing skills.")}</span></span>
+          <span className="land-line"><span className="appear">{t("home.heroProof", "Start proving them.")}</span></span>
         </h1>
 
         <p className="land-lede appear">
-          UPNEX turns academic marks, projects and certificates into one living, verifiable
-          profile — and uses the evidence to map the career paths you should actually pursue.
+          {t("home.heroTag", "UPNEX turns academic marks, projects and certificates into one living, verifiable profile — and uses the evidence to map the career paths you should actually pursue.")}
         </p>
 
         <div className="land-cta-row">
-          <a className="land-btn land-btn--solid appear" href="/register">Start for Free</a>
-          <a className="land-btn land-btn--ghost appear" href="/login">Sign In</a>
+          <a className="land-btn land-btn--solid appear" href="/register">{t("home.startForFree", "Start for Free")}</a>
+          <a className="land-btn land-btn--ghost appear" href="/login">{t("home.signIn", "Sign In")}</a>
         </div>
       </main>
 
@@ -191,7 +186,7 @@ export default function Home() {
             <path d="M12 2.9l7 2.5v5.4c0 4.3-2.6 7.6-7 9.3-4.4-1.7-7-5-7-9.3V5.4z" />
             <path d="M9 11.7l2 2 4-4" />
           </svg>
-          Verifiable proof-of-work
+          {t("home.proofOfWork", "Verifiable proof-of-work")}
         </span>
         <span className="land-stat appear">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -199,7 +194,7 @@ export default function Home() {
             <circle cx="18" cy="6" r="2.2" />
             <path d="M8.2 18c4-1.5 5.9-5.2 6.5-8.4" />
           </svg>
-          AI-driven career pathing
+          {t("home.aiCareer", "AI-driven career pathing")}
         </span>
         <span className="land-stat appear">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -207,15 +202,15 @@ export default function Home() {
             <path d="M3.5 7.2v9.3l8.5 3.8 8.5-3.8V7.2" />
             <path d="M3.5 7.2l8.5 3.8 8.5-3.8M12 11v10" />
           </svg>
-          Secure credential vault
+          {t("home.secureVault", "Secure credential vault")}
         </span>
       </footer>
 
       <div className="land-mobile" id="land-menu" onClick={(event) => { if (event.target === event.currentTarget) closeMobile(); }}>
-        <a href="/login" onClick={closeMobile}>Sign In</a>
-        <a href="/register" onClick={closeMobile}>Get Started</a>
-        <a href="/register" onClick={closeMobile} className="land-btn land-btn--solid land-mobile-cta">Start for Free</a>
-        <button type="button" className="land-mobile-x" aria-label="Close menu" onClick={closeMobile}>×</button>
+        <a href="/login" onClick={closeMobile}>{t("home.signIn", "Sign In")}</a>
+        <a href="/register" onClick={closeMobile}>{t("home.getStarted", "Get Started")}</a>
+        <a href="/register" onClick={closeMobile} className="land-btn land-btn--solid land-mobile-cta">{t("home.startForFree", "Start for Free")}</a>
+        <button type="button" className="land-mobile-x" aria-label={t("home.closeMenu", "Close menu")} onClick={closeMobile}>×</button>
       </div>
     </div>
   );

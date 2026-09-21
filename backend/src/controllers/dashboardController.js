@@ -4,7 +4,7 @@ export async function dashboard(req, res) {
   const [user, enrollments, courseCount, lessonProgress, assessmentResults] = await Promise.all([
     prisma.user.findUnique({
       where: { id: req.auth.id },
-      select: { id: true, name: true, email: true, role: true }
+      select: { id: true, name: true, email: true, username: true, role: true }
     }),
     prisma.enrollment.findMany({
       where: { userId: req.auth.id },

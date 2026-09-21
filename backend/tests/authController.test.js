@@ -5,7 +5,8 @@ vi.mock("../src/config/database.js", () => ({
   prisma: {
     user: {
       findUnique: vi.fn(),
-      create: vi.fn()
+      create: vi.fn(),
+      update: vi.fn()
     }
   }
 }));
@@ -104,7 +105,7 @@ describe("authController.login", () => {
   it("returns a safe user and sets a cookie on valid credentials", async () => {
     const bcrypt = (await import("bcryptjs")).default;
     const passwordHash = await bcrypt.hash("password123", 12);
-    prisma.user.findUnique.mockResolvedValue({ id: "u4", name: "Valid", email: "valid@example.com", role: "STUDENT", passwordHash });
+    prisma.user.findUnique.mockResolvedValue({ id: "u4", name: "Valid", email: "valid@example.com", username: "valid", role: "STUDENT", passwordHash });
     const req = { body: { email: "valid@example.com", password: "password123" } };
     const res = createRes();
 
@@ -112,7 +113,7 @@ describe("authController.login", () => {
 
     expect(res.cookie).toHaveBeenCalledWith("upnex_token", "test-token", expect.any(Object));
     expect(res.json).toHaveBeenCalledWith({
-      user: { id: "u4", name: "Valid", email: "valid@example.com", role: "STUDENT" }
+      user: { id: "u4", name: "Valid", email: "valid@example.com", username: "valid", role: "STUDENT" }
     });
     // Password hash must never be leaked to the client.
     const payload = res.json.mock.calls[0][0];
