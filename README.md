@@ -478,7 +478,16 @@ Please make sure `npm test --prefix backend` passes before opening a PR.
 
 Built for Smart India Hackathon 2026
 
-[Arjun Santhosh](https://github.com/Arjunsanthosh1777)
+<br>
+
+| Member |
+|:---|
+| **Arjun Santhosh**  |
+| **Alvin Steve Saji** |
+| **Robert Vijayakumar** |
+| **Aravindan** |
+| **Priyanka** |
+| **Prince Haridas** |
 
 </div>
 
