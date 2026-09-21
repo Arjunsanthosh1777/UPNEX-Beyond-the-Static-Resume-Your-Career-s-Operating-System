@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { prisma } from "../config/database.js";
 import { signAccessToken } from "../utils/signedUrl.js";
 import { isValidUsername, normalizeUsername } from "../utils/username.js";
-import { deleteFile, mediaStorageRoot, putFile } from "../services/objectStore.js";
+import { deleteFile, mediaStorageRoot, putFile, readBuffer } from "../services/objectStore.js";
+import { guessCategory, parseMarks, recognizeImage } from "../services/ocr.js";
 import {
   ALLOWED_MIME,
   buildStorageKey,
@@ -32,7 +33,14 @@ const visibility = z.enum(PRIVACY_LEVELS);
 const markSchema = z.object({
   subject: z.string().min(2).max(80),
   category: z.string().min(2).max(40),
-  score: z.number().int().min(0).max(100)
+  score: z.number().int().min(0).max(100),
+  maxScore: z.number().int().min(1).max(1000).optional().default(100),
+  grade: z.string().trim().max(16).optional().or(z.literal(""))
+});
+
+const markBatchSchema = z.object({
+  docId: z.string().optional(),
+  marks: z.array(markSchema).min(1).max(50)
 });
 
 const projectSchema = z.object({
@@ -210,6 +218,9 @@ function serializeDocument(document) {
     issuer: document.issuer || null,
     verified: document.verified,
     verificationId: document.verified ? (document.verificationId || verificationIdFor(document.id)) : null,
+    verifiedBy: document.verifiedBy || null,
+    verifiedAt: document.verifiedAt || null,
+    fileHash: document.fileHash || null,
     hasFile: Boolean(document.storageKey),
     previewKind: document.mime ? previewKind(document.mime) : "unsupported",
     downloadCount: document.downloadCount,
@@ -472,7 +483,11 @@ let storageKey = null;
           fileSize,
           mime,
           originalName: safeBasename(file.originalname || fileName),
-          storageKey
+          storageKey,
+          // SHA-256 fingerprint of the exact bytes, taken once at upload. It is
+          // shown on the public verify page so the original contents can be
+          // recognised if the file is ever re-downloaded elsewhere.
+          fileHash: createHash("sha256").update(file.buffer).digest("hex")
         }
       });
       return res.status(201).json({ document: serializeDocument(document) });
@@ -556,14 +571,109 @@ export async function getDocumentAccess(req, res) {
   });
 }
 
+// One subject per category, upserted by hand (no DB unique constraint so the
+// same subject can be tracked across semesters later). Manual entries carry no
+// source document; OCR-imported rows are replaced wholesale by batchSaveMarks.
 export async function addMark(req, res) {
   const data = markSchema.parse(req.body);
-  const mark = await prisma.academicMark.upsert({
-    where: { userId_subject: { userId: req.auth.id, subject: data.subject } },
-    update: data,
-    create: { ...data, userId: req.auth.id }
+  const existing = await prisma.academicMark.findFirst({
+    where: { userId: req.auth.id, subject: data.subject, docId: null },
+    orderBy: { createdAt: "desc" }
   });
+  const mark = existing
+    ? await prisma.academicMark.update({ where: { id: existing.id }, data })
+    : await prisma.academicMark.create({ data: { ...data, userId: req.auth.id } });
   res.status(201).json({ mark });
+}
+
+export async function listMarks(req, res) {
+  const marks = await prisma.academicMark.findMany({
+    where: { userId: req.auth.id },
+    orderBy: [{ category: "asc" }, { createdAt: "asc" }],
+    include: { doc: { select: { id: true, fileName: true, verified: true } } }
+  });
+  res.json({ marks });
+}
+
+export async function removeMark(req, res) {
+  const existing = await prisma.academicMark.findFirst({
+    where: { id: req.params.id, userId: req.auth.id }
+  });
+  if (!existing) return res.status(404).json({ message: "Mark not found." });
+  await prisma.academicMark.delete({ where: { id: existing.id } });
+  res.status(204).send();
+}
+
+// OCR path: reads the stored document bytes, recognises the text and returns
+// candidate subject/score rows WITHOUT saving them. The client confirms (and
+// can edit) the candidates, then calls batchSaveMarks.
+export async function analyseDocument(req, res) {
+  const document = await prisma.vaultDocument.findFirst({
+    where: { id: req.params.id, userId: req.auth.id }
+  });
+  if (!document) return res.status(404).json({ message: "Document not found." });
+  if (!document.storageKey) {
+    return res.status(409).json({ message: "This document has no file attached." });
+  }
+  if (!document.mime || !document.mime.startsWith("image/")) {
+    return res.status(422).json({ message: "Only image marksheets can be analysed automatically. Upload a photo of your marksheet (JPG, PNG or WebP)." });
+  }
+
+  const buffer = await readBuffer({ key: document.storageKey });
+  if (!buffer) return res.status(404).json({ message: "The document file is missing." });
+
+  const text = await recognizeImage(buffer).catch(() => null);
+  if (!text) {
+    return res.status(502).json({ message: "Couldn't read this marksheet. Try a clearer photo with good lighting." });
+  }
+
+  try {
+    await prisma.vaultDocument.update({ where: { id: document.id }, data: { ocrText: text.slice(0, 20000) } });
+  } catch {
+    // Keeping the transcript is best-effort; the analysis itself must not fail.
+  }
+
+  const candidates = parseMarks(text).map((entry) => ({
+    ...entry,
+    category: guessCategory(document.fileName)
+  }));
+  res.json({ candidates, text: text.slice(0, 4000) });
+}
+
+// Replaces every OCR-imported mark for a document with the confirmed set the
+// client sends back. Manual (docId-less) marks are never touched.
+export async function batchSaveMarks(req, res) {
+  const data = markBatchSchema.parse(req.body);
+  const userId = req.auth.id;
+
+  if (data.docId) {
+    const document = await prisma.vaultDocument.findFirst({ where: { id: data.docId, userId } });
+    if (!document) return res.status(404).json({ message: "Document not found." });
+  }
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      if (data.docId) {
+        await tx.academicMark.deleteMany({ where: { userId, docId: data.docId, source: "ocr" } });
+      }
+      return tx.academicMark.createMany({
+        data: data.marks.map((mark) => ({
+          userId,
+          subject: mark.subject,
+          category: mark.category,
+          score: mark.score,
+          maxScore: mark.maxScore ?? 100,
+          grade: mark.grade || null,
+          source: "ocr",
+          docId: data.docId || null
+        }))
+      });
+    });
+    res.status(201).json({ count: result.count });
+  } catch (error) {
+    console.error("batch save marks failed:", error);
+    res.status(409).json({ message: "Some subjects couldn't be saved. Try changing the scores to whole numbers and retry." });
+  }
 }
 
 export async function addProject(req, res) {

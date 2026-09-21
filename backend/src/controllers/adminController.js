@@ -35,13 +35,19 @@ export async function approveDocument(req, res) {
     ? body.issuer.trim()
     : document.issuer;
 
+  const admin = req.auth?.id
+    ? await prisma.user.findUnique({ where: { id: req.auth.id }, select: { name: true } })
+    : null;
+
   const updated = await prisma.vaultDocument.update({
     where: { id: document.id },
     data: {
       verified: true,
       fileName,
       issuer,
-      verificationId: document.verificationId || verificationIdFor(document.id)
+      verificationId: document.verificationId || verificationIdFor(document.id),
+      verifiedBy: admin?.name || "UPNEX Review Team",
+      verifiedAt: new Date()
     }
   });
 

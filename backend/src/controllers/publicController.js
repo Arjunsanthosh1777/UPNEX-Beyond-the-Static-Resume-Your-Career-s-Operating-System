@@ -131,7 +131,10 @@ export async function getVerifyInfo(req, res) {
       name: document.fileName,
       type: document.documentType,
       issuer: document.issuer || null,
-      issuedAt: document.createdAt
+      issuedAt: document.createdAt,
+      fileHash: document.fileHash || null,
+      verifiedBy: document.verifiedBy || null,
+      verifiedAt: document.verifiedAt || null
     }
   });
 }

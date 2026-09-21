@@ -7,16 +7,20 @@ import {
   addLearning,
   addMark,
   addProject,
+  analyseDocument,
+  batchSaveMarks,
   generateAbout,
   generateHeadlines,
   getAnalytics,
   getDocumentAccess,
   getProfile,
+  listMarks,
   removeAchievement,
   removeCover,
   removeDocument,
   removeExperience,
   removeLearning,
+  removeMark,
   removePhoto,
   removeProject,
   reorderExperience,
@@ -50,7 +54,11 @@ router.post("/documents", upload.single("file"), addDocument);
 router.patch("/documents/:id", updateDocument);
 router.delete("/documents/:id", removeDocument);
 router.post("/documents/:id/access", getDocumentAccess);
+router.post("/documents/:id/analyse", analyseDocument);
+router.get("/marks", listMarks);
 router.post("/marks", addMark);
+router.delete("/marks/:id", removeMark);
+router.post("/marks/batch", batchSaveMarks);
 router.post("/projects", addProject);
 router.patch("/projects/:id", updateProject);
 router.delete("/projects/:id", removeProject);

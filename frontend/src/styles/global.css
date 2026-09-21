@@ -1651,6 +1651,33 @@ img, svg, video { display: block; max-width: 100%; }
 .modal-error { color: #ff9d9d; font-size: 13px; margin: 2px 0 10px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 
+/* Marksheet analyser modal */
+.analyse-modal { max-width: 720px; max-height: 84vh; display: flex; flex-direction: column; }
+.analyse-grid { display: grid; grid-template-columns: 260px 1fr; gap: 16px; min-height: 0; flex: 1; }
+.analyse-preview { border-radius: 11px; overflow: hidden; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); display: grid; place-items: center; min-height: 220px; max-height: 340px; }
+.analyse-preview img { width: 100%; height: 100%; object-fit: contain; }
+.analyse-stage { display: flex; flex-direction: column; min-width: 0; }
+.analyse-hint { color: #9aa1ad; font-size: 13px; line-height: 1.5; margin: 0 0 10px; }
+.analyse-meta { color: #6b7180; font-size: 12px; word-break: break-word; }
+.ocr-busy { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 30px 0; color: #9aa1ad; font-size: 13px; }
+.ocr-busy svg { color: #9a7bff; }
+.ocr-busy strong { color: #e6e8ee; font-size: 14px; font-weight: 600; }
+.spin { animation: ocr-spin 1s linear infinite; }
+@keyframes ocr-spin { to { transform: rotate(360deg); } }
+.analyse-rows { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 300px; padding: 2px; margin-top: 4px; }
+.analyse-row { display: grid; grid-template-columns: 1fr 64px 56px 56px 26px; gap: 6px; align-items: center; }
+.analyse-row.head { color: #6b7180; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; padding: 0 2px; }
+.analyse-row input { margin-top: 0; padding: 7px 8px; font-size: 13px; min-width: 0; }
+.analyse-remove { width: 26px; height: 30px; display: grid; place-items: center; border: 0; background: none; color: #ff7d7d; cursor: pointer; border-radius: 7px; }
+.analyse-remove:hover { background: rgba(255, 90, 90, 0.14); }
+.analyse-add { display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px dashed rgba(169, 139, 255, 0.4); color: #c7b5ff; border-radius: 9px; padding: 7px 10px; font-size: 12.5px; cursor: pointer; margin-top: 6px; align-self: flex-start; }
+.analyse-add:hover { background: rgba(169, 139, 255, 0.1); }
+.analyse-fields label { margin-bottom: 0; }
+@media (max-width: 640px) {
+  .analyse-grid { grid-template-columns: 1fr; }
+  .analyse-preview { max-height: 180px; min-height: 120px; }
+}
+
 /* Viewer */
 .viewer-overlay { position: fixed; inset: 0; z-index: 150; display: flex; flex-direction: column; background: rgba(4, 4, 10, 0.96); color: #fff; }
 .viewer-header { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-wrap: wrap; }
@@ -2182,6 +2209,10 @@ html[lang="gu"] body, html[lang="pa"] body, html[lang="ta"] body, html[lang="te"
 .verify-handle { color: #a98bff; font-weight: 600; font-size: 13.5px; text-decoration: none; }
 .verify-copy { display: inline-flex; align-items: center; gap: 7px; background: linear-gradient(135deg, #7c4dff, #9a5bff); color: #fff; border: none; border-radius: 10px; padding: 10px 18px; font-weight: 600; font-size: 13.5px; cursor: pointer; }
 .verify-copy.ok { background: #1f9d5c; }
+.verify-extras { display: flex; flex-direction: column; gap: 8px; margin: -10px 0 22px; text-align: left; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 12px 16px; }
+.verify-extra-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12.5px; color: #d3d6de; }
+.verify-extra-label { color: #7c8291; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.verify-extra-hash { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 12px; color: #a98bff; }
 .verify-note { margin-top: 20px; font-size: 12px; color: #7c8291; line-height: 1.6; }
 .verify-foot { margin-top: 30px; }
 .verify-foot a { color: #a98bff; font-weight: 600; font-size: 13.5px; text-decoration: none; }

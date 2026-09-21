@@ -3,6 +3,7 @@ import { Archive, CheckCircle2, PackageOpen, Search, ShieldCheck, Upload, X } fr
 import DocumentCard from "./DocumentCard";
 import DocumentViewer from "./DocumentViewer";
 import EditDocumentModal from "./EditDocumentModal";
+import AnalyseModal from "./AnalyseModal";
 import { Toasts, useToasts } from "./Toasts";
 import { deleteDocument, downloadDocument, downloadSelectedAsZip } from "./vaultUtils";
 import { useTranslation } from "react-i18next";
@@ -13,6 +14,7 @@ export default function Vault({ profile, uploadDocument, loadProfile }) {
   const [selected, setSelected] = useState(() => new Set());
   const [viewerDoc, setViewerDoc] = useState(null);
   const [editDoc, setEditDoc] = useState(null);
+  const [analyseDoc, setAnalyseDoc] = useState(null);
   const [busing, setBusing] = useState(false);
   const { toasts, push, dismiss } = useToasts();
   const { t } = useTranslation();
@@ -116,6 +118,7 @@ export default function Vault({ profile, uploadDocument, loadProfile }) {
                     onPreview={() => document.hasFile && setViewerDoc(document)}
                     onDownload={() => handleDownload(document)}
                     onEdit={() => setEditDoc(document)}
+                    onAnalyse={document.hasFile && (document.previewKind === "image") ? () => setAnalyseDoc(document) : null}
                     onDelete={() => handleDelete(document)}
                   />
                 ))}
@@ -156,6 +159,16 @@ export default function Vault({ profile, uploadDocument, loadProfile }) {
           onSaved={() => {
             setEditDoc(null);
             loadProfile().then(() => push(t("vault.detailsSaved", "Document details saved."), "success"));
+          }}
+        />
+      )}
+      {analyseDoc && (
+        <AnalyseModal
+          document={analyseDoc}
+          onClose={() => setAnalyseDoc(null)}
+          onSaved={(count) => {
+            setAnalyseDoc(null);
+            loadProfile().then(() => push(t("vault.ocrSaved", { count }), "success"));
           }}
         />
       )}

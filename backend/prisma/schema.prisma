@@ -131,30 +131,42 @@ model VaultDocument {
   mime           String?
   originalName   String?
   storageKey     String?   @unique
+  fileHash       String?
   verified       Boolean   @default(false)
   verificationId String?
   issuer         String?
+  verifiedBy     String?
+  verifiedAt     DateTime?
   ocrText        String?
   downloadCount  Int       @default(0)
   previewCount   Int       @default(0)
   lastAccessedAt DateTime?
   createdAt      DateTime  @default(now())
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marks          AcademicMark[]
 
   @@index([userId, createdAt])
 }
 
 model AcademicMark {
-  id        String   @id @default(cuid())
-  userId    String
-  subject   String
-  category  String
-  score     Int
-  maxScore  Int      @default(100)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String         @id @default(cuid())
+  userId     String
+  subject    String
+  category   String
+  score      Int
+  maxScore   Int            @default(100)
+  grade      String?
+  semester   Int?
+  year       String?
+  source     String?        @default("manual")
+  confidence Float?
+  docId      String?
+  createdAt  DateTime       @default(now())
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  doc        VaultDocument? @relation(fields: [docId], references: [id], onDelete: SetNull)
 
-  @@unique([userId, subject])
+  @@index([userId])
+  @@index([docId])
 }
 
 model Project {

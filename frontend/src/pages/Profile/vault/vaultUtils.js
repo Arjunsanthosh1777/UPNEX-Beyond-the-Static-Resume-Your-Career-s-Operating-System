@@ -38,6 +38,25 @@ export async function downloadDocument(document) {
   link.remove();
 }
 
+// OCR marksheet analysis: returns { candidates, text } without saving anything.
+export function analyseDocument(documentId) {
+  return api.post(`/profile/documents/${documentId}/analyse`).then((response) => response.data);
+}
+
+// Saves the confirmed candidate rows, replacing any earlier OCR import for the
+// same document. Manual marks are never touched.
+export function saveMarksBatch(docId, marks) {
+  return api.post("/profile/marks/batch", { docId, marks }).then((response) => response.data);
+}
+
+export function getMarks() {
+  return api.get("/profile/marks").then((response) => response.data.marks);
+}
+
+export function deleteMark(markId) {
+  return api.delete(`/profile/marks/${markId}`);
+}
+
 export function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.ceil(bytes / 1024))} KB`;

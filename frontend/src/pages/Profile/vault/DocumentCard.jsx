@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Download, Eye, FileType2, MoreHorizontal, Pencil, Trash2
+  Download, Eye, FileType2, MoreHorizontal, Pencil, ScanText, Trash2
 } from "lucide-react";
 import { getDocumentAccess, formatBytes } from "./vaultUtils";
 import { getPdfjs } from "./pdfjsLoader";
@@ -74,7 +74,7 @@ function PdfThumb({ document }) {
   );
 }
 
-function DocumentMenu({ document, onPreview, onDownload, onEdit, onDelete }) {
+function DocumentMenu({ document, onPreview, onDownload, onEdit, onAnalyse, onDelete }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const nodeRef = useRef(null);
@@ -112,6 +112,7 @@ function DocumentMenu({ document, onPreview, onDownload, onEdit, onDelete }) {
           <button type="button" role="menuitem" onClick={run(onPreview)}><Eye size={15} /> {t("vault.menuPreview", "Preview")}</button>
           <button type="button" role="menuitem" onClick={run(onDownload)}><Download size={15} /> {t("vault.menuDownload", "Download")}</button>
           <button type="button" role="menuitem" onClick={run(onEdit)}><Pencil size={15} /> {t("vault.menuEdit", "Edit details")}</button>
+          {onAnalyse && <button type="button" role="menuitem" onClick={run(onAnalyse)}><ScanText size={15} /> {t("vault.menuAnalyse", "Analyse marks")}</button>}
           <button type="button" role="menuitem" className="menu-danger" onClick={run(onDelete)}><Trash2 size={15} /> {t("vault.menuDelete", "Delete")}</button>
         </div>
       )}
@@ -119,7 +120,7 @@ function DocumentMenu({ document, onPreview, onDownload, onEdit, onDelete }) {
   );
 }
 
-export default function DocumentCard({ document, onPreview, onDownload, onEdit, onDelete, selected, onToggleSelect }) {
+export default function DocumentCard({ document, onPreview, onDownload, onEdit, onAnalyse, onDelete, selected, onToggleSelect }) {
   const { t } = useTranslation();
   const [url, setUrl] = useState(null);
   const hasFile = Boolean(document.hasFile);
@@ -164,7 +165,7 @@ export default function DocumentCard({ document, onPreview, onDownload, onEdit, 
         <button type="button" className="card-action" onClick={onDownload} disabled={!hasFile}>
           <Download size={14} /> {t("vault.menuDownload", "Download")}
         </button>
-        <DocumentMenu document={document} onPreview={onPreview} onDownload={onDownload} onEdit={onEdit} onDelete={onDelete} />
+        <DocumentMenu document={document} onPreview={onPreview} onDownload={onDownload} onEdit={onEdit} onAnalyse={onAnalyse} onDelete={onDelete} />
       </div>
     </article>
   );

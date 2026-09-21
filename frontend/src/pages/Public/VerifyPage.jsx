@@ -135,6 +135,21 @@ export default function VerifyPage() {
             </div>
           </div>
 
+          <div className="verify-extras">
+            {doc.fileHash && (
+              <div className="verify-extra-row">
+                <span className="verify-extra-label">{t("verify.fingerprint", "File fingerprint")}</span>
+                <code className="verify-extra-hash" title={doc.fileHash}>{doc.fileHash.slice(0, 20)}…</code>
+              </div>
+            )}
+            {doc.verifiedBy && (
+              <div className="verify-extra-row">
+                <span className="verify-extra-label">{t("verify.reviewedBy", "Verified by")}</span>
+                <span>{doc.verifiedBy}{doc.verifiedAt ? ` · ${formatDate(doc.verifiedAt)}` : ""}</span>
+              </div>
+            )}
+          </div>
+
           <div className="verify-qr-row">
             <div className="verify-qr" aria-label="QR code that opens this verification page">
               <canvas ref={qrRef} width={168} height={168} />

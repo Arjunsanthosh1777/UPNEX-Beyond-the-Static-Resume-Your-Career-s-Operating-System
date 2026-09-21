@@ -151,3 +151,21 @@ function toNodeStream(body) {
   if (body && typeof body.getReader === "function") return Readable.fromWeb(body);
   return body;
 }
+
+// Reads a whole file into memory. Used by analytics (OCR) and integrity checks;
+// the streaming path above remains the default for file delivery.
+export async function readBuffer({ key, root = defaultStorageRoot() }) {
+  if (objectStoreConfigured()) {
+    const chunks = [];
+    const source = await openFile({ key, root });
+    if (!source) return null;
+    for await (const chunk of source.stream) chunks.push(Buffer.from(chunk));
+    return Buffer.concat(chunks);
+  }
+  const filePath = diskPath(root, key);
+  try {
+    return await fs.readFile(filePath);
+  } catch {
+    return null;
+  }
+}
