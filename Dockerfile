@@ -31,6 +31,9 @@ RUN npm run build
 FROM node:24-slim AS backend
 WORKDIR /app/backend
 
+# Prisma needs OpenSSL/LibreSSL at build+runtime on Debian slim
+RUN apt-get update -y && apt-get install -y openssl libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
+
 COPY backend/package.json backend/package-lock.json ./
 COPY backend/src/dataconnect-generated ./src/dataconnect-generated
 COPY backend/prisma ./prisma
