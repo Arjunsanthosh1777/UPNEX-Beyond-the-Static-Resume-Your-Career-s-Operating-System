@@ -25,6 +25,7 @@ import api from "../../services/api";
 import SkillGraph from "../../components/profile/SkillGraph";
 import ShareModal from "../../components/profile/ShareModal";
 import ProofPreview from "../../components/profile/ProofPreview";
+import { ScreenLoader } from "../../components/Loading";
 
 // Mirrors the backend contract (utils/username.js): lowercase [a-z0-9_-],
 // 3-24 chars. Anything else short-circuits to the 404 page without a request.
@@ -384,7 +385,7 @@ export default function PublicProfile() {
   }
 
   if (state.phase === "loading") {
-    return <div className="screen-loader">{t("common.loading", "LOADING…")}</div>;
+    return <ScreenLoader label={t("common.loading", "LOADING…")} />;
   }
 
   return <ProfileCard data={state.data} />;

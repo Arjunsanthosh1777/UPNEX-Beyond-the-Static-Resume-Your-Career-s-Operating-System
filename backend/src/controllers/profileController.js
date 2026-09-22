@@ -352,7 +352,7 @@ function buildAnalyticsOverview(events) {
 // ---------- Profile section CRUD ----------
 
 export async function getProfile(req, res) {
-  const [user, documents, marks, projects, experiences, learnings, achievements, events] = await Promise.all([
+  const [user, documents, marks, projects, experiences, learnings, achievements, events, studyBadges] = await Promise.all([
     prisma.user.findUnique({ where: { id: req.auth.id }, select: PROFILE_SELECT }),
     prisma.vaultDocument.findMany({ where: { userId: req.auth.id }, orderBy: { createdAt: "desc" } }),
     prisma.academicMark.findMany({ where: { userId: req.auth.id }, orderBy: { score: "asc" } }),
@@ -360,10 +360,18 @@ export async function getProfile(req, res) {
     prisma.profileExperience.findMany({ where: { userId: req.auth.id }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
     prisma.profileLearning.findMany({ where: { userId: req.auth.id }, orderBy: { createdAt: "desc" } }),
     prisma.achievement.findMany({ where: { userId: req.auth.id }, orderBy: { createdAt: "desc" } }),
-    prisma.profileEvent.findMany({ where: { userId: req.auth.id }, orderBy: { createdAt: "desc" }, take: 500 })
+    prisma.profileEvent.findMany({ where: { userId: req.auth.id }, orderBy: { createdAt: "desc" }, take: 500 }),
+    prisma.studyBadge.count({ where: { userId: req.auth.id } })
   ]);
   const guidance = buildGuidance(marks, projects);
-  const readiness = Math.min(100, Math.round(guidance.average * 0.65 + Math.min(projects.length * 8, 24) + Math.min(documents.filter((doc) => doc.verified).length * 4, 12)));
+  // Readiness: academic average is the backbone, projects and verified docs
+  // reward proof-of-work, and Smart Study badges reward consistency.
+  const readiness = Math.min(100, Math.round(
+    guidance.average * 0.65
+    + Math.min(projects.length * 8, 24)
+    + Math.min(documents.filter((doc) => doc.verified).length * 4, 12)
+    + Math.min(studyBadges * 2, 8)
+  ));
   const ctx = { documents, projects, experiences };
   res.json({
     user,

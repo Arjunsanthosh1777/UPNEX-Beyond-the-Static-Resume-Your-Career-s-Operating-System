@@ -345,7 +345,20 @@
     "weeksActive": "active weeks",
     "consistencyEyebrow": "YOUR TRACK RECORD",
     "consistencyTitle": "Study consistency",
-    "noConsistency": "No weeks tracked yet — tick off some sessions to start your record."
+    "noConsistency": "No weeks tracked yet — tick off some sessions to start your record.",
+    "trendEyebrow": "SCORES OVER TIME",
+    "trendTitle": "Subject trend analysis",
+    "trendEmpty": "Add at least one mark and a trend line will appear here.",
+    "trendAvg": "avg",
+    "trendTarget": "target",
+    "gapEyebrow": "CURRENT AVG VS TARGET",
+    "gapTitle": "Goal gap analysis",
+    "noGoalsChart": "No goals set yet — add a target on any subject to see the gap chart.",
+    "badgesEyebrow": "EARNED FROM REAL BEHAVIOUR",
+    "badgesTitle": "Study badges",
+    "badgesCount": "{{earned}} of {{total}} badges",
+    "badgesReadyNote": "Every badge adds points to your Career Passport readiness score.",
+    "justEarned": "NEW!"
   },
   "careers": {
     "kicker": "04 / CAREER GUIDANCE",

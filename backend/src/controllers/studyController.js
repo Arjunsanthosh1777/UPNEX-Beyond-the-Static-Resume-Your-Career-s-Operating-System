@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { prisma } from "../config/database.js";
+import { notifyUser } from "../services/notify.js";
+import { sendMail, wrapEmail } from "../services/mailer.js";
 
 // "Smart education" engine: reads the student's actual marks + enrollments and
 // turns them into a personal subject coach (which subjects to fix, and courses
@@ -159,6 +161,10 @@ export async function getCoach(req, res) {
   res.json({
     empty: false,
     currentSemester: current ? { year: current.year, semester: current.semester } : null,
+    subjects: subjectStats(marks).map(({ marks: list, ...rest }) => ({
+      ...rest,
+      history: list.map((mark) => ({ score: mark.score, at: mark.createdAt, semester: mark.semester ?? null, year: mark.year ?? null }))
+    })),
     strengths: strongSubjects(marks),
     weaknesses,
     enrolled: enrollments.length,
@@ -275,6 +281,7 @@ export async function getPlanner(req, res) {
     row = await prisma.studyPlan.create({
       data: { userId: req.auth.id, weekStart, plan: built.days, done: {} }
     });
+    await announceNewWeek(req.auth.id, built).catch(() => {});
   }
 
   res.json({
@@ -339,18 +346,12 @@ export async function deleteStudyGoal(req, res) {
   res.json({ goals: await goalsWithStatus(req.auth.id) });
 }
 
-// ---------- Consistency analytics ----------
+// ---------- Consistency analytics + badges ----------
 
-export async function getStudyProgress(req, res) {
-  const [rows, goals, marks] = await Promise.all([
-    prisma.studyPlan.findMany({
-      where: { userId: req.auth.id },
-      orderBy: { weekStart: "desc" }
-    }),
-    prisma.studyGoal.findMany({ where: { userId: req.auth.id } }),
-    prisma.academicMark.findMany({ where: { userId: req.auth.id } })
-  ]);
-
+// One shared computation: per-week completion, the streak, running totals and
+// the live goal status. Used by both the analytics endpoint and badge awards so
+// the two can never disagree.
+function computeStudyAnalytics(rows, goals, marks) {
   const weekly = rows
     .map((row) => {
       const list = Array.isArray(row.plan) ? row.plan : [];
@@ -368,23 +369,128 @@ export async function getStudyProgress(req, res) {
     else break;
   }
 
-  const lastEight = weekly.slice(-8);
   const sessionsDone = weekly.reduce((sum, week) => sum + week.done, 0);
   const sessionsPlanned = weekly.reduce((sum, week) => sum + week.total, 0);
 
-  const avgBySubject = new Map(
-    subjectStats(marks).map((entry) => [entry.subject.toLowerCase(), entry.avg])
-  );
+  const avgBySubject = new Map(subjectStats(marks).map((entry) => [entry.subject.toLowerCase(), entry.avg]));
   const goalRows = goals.map((goal) => {
     const avg = avgBySubject.get(goal.subject.trim().toLowerCase());
     return { subject: goal.subject, target: goal.target, avg, met: avg != null && avg >= goal.target };
   });
 
-  res.json({
-    weeks: lastEight.map((week) => ({ start: week.weekStart.toISOString().slice(0, 10), done: week.done, total: week.total, pct: week.pct })),
-    current: current && { done: current.done, total: current.total, pct: current.pct },
+  return {
+    weekly,
+    current,
     streak,
-    totals: { sessionsDone, sessionsPlanned, weeksActive: weekly.filter((week) => week.done > 0).length },
+    totals: {
+      sessionsDone,
+      sessionsPlanned,
+      weeksActive: weekly.filter((week) => week.done > 0).length
+    },
     goals: { set: goalRows.length, met: goalRows.filter((row) => row.met).length }
+  };
+}
+
+// Auto-earned badges (all derived from real study behaviour — no guessing).
+const BADGE_DEFS = [
+  { code: "first_session", title: "First session", hint: "Complete your first study session" },
+  { code: "streak_3", title: "3-week streak", hint: "Study three weeks in a row" },
+  { code: "streak_7", title: "7-week streak", hint: "Study seven weeks in a row" },
+  { code: "ten_sessions_week", title: "10-session week", hint: "Complete ten sessions in a single week" },
+  { code: "goal_crusher", title: "Goal crusher", hint: "Meet every target you have set" },
+  { code: "weeks_active_4", title: "Consistent 4", hint: "Study across four different weeks" },
+  { code: "weeks_active_8", title: "Planner regular", hint: "Stay active across eight weeks" }
+];
+
+async function evaluateBadges(userId, stats) {
+  const owned = await prisma.studyBadge.findMany({ where: { userId }, select: { code: true } });
+  const have = new Set(owned.map((badge) => badge.code));
+
+  const newlyEarned = [];
+  const award = (code, title, unlocked) => {
+    if (unlocked && !have.has(code)) newlyEarned.push({ code, title });
+  };
+
+  award("first_session", "First session", stats.totals.sessionsDone >= 1);
+  award("streak_3", "3-week streak", stats.streak >= 3);
+  award("streak_7", "7-week streak", stats.streak >= 7);
+  award("ten_sessions_week", "10-session week", stats.weekly.some((week) => week.done >= 10) || (stats.current && stats.current.done >= 10));
+  award("goal_crusher", "Goal crusher", stats.goals.set > 0 && stats.goals.set === stats.goals.met);
+  award("weeks_active_4", "Consistent 4", stats.totals.weeksActive >= 4);
+  award("weeks_active_8", "Planner regular", stats.totals.weeksActive >= 8);
+
+  if (newlyEarned.length) {
+    await prisma.studyBadge.createMany({
+      data: newlyEarned.map((badge) => ({ userId, code: badge.code, title: badge.title })),
+      skipDuplicates: true
+    });
+    for (const badge of newlyEarned) {
+      notifyUser({
+        userId,
+        type: "badge",
+        title: `Badge unlocked: ${badge.title}`,
+        message: "Your Smart Study consistency earned you a badge.",
+        link: "/profile/study"
+      }).catch(() => {});
+    }
+  }
+  return newlyEarned;
+}
+
+// When a brand-new week's plan is generated, tell the student in-app and (if
+// they opted into the weekly digest) via email.
+async function announceNewWeek(userId, built) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, emailPrefs: true }
+  });
+  const first = built.days[0]?.slots?.[0]?.subject || "";
+
+  await notifyUser({
+    userId,
+    type: "study",
+    title: "Your study plan for this week is ready",
+    message: `${built.total} sessions scheduled this week${first ? ` — start with ${first}.` : "."}`,
+    link: "/profile/study"
+  });
+
+  if (user?.email && user.emailPrefs?.study === true) {
+    await sendMail({
+      to: user.email,
+      userId,
+      subject: "Your UPNEX study plan for this week is ready",
+      html: wrapEmail(`
+        <h2 style="margin:0 0 8px;font-size:18px;color:#fff;">This week's study plan is ready</h2>
+        <p style="margin:0;">UPNEX scheduled <b>${built.total} study sessions</b> for this week${first ? `, starting with <b>${first}</b>` : ""} based on your marks, goals and in-progress courses.</p>
+        <p style="margin:14px 0 0;">Open Smart Study to tick sessions off, track your streak and earn badges.</p>`)
+    });
+  }
+}
+
+export async function getStudyProgress(req, res) {
+  const [rows, goals, marks, ownedBadges] = await Promise.all([
+    prisma.studyPlan.findMany({
+      where: { userId: req.auth.id },
+      orderBy: { weekStart: "desc" }
+    }),
+    prisma.studyGoal.findMany({ where: { userId: req.auth.id } }),
+    prisma.academicMark.findMany({ where: { userId: req.auth.id } }),
+    prisma.studyBadge.findMany({ where: { userId: req.auth.id }, orderBy: { earnedAt: "desc" } })
+  ]);
+
+  const stats = computeStudyAnalytics(rows, goals, marks);
+  const newlyEarned = await evaluateBadges(req.auth.id, stats);
+
+  res.json({
+    weeks: stats.weekly.slice(-8).map((week) => ({ start: week.weekStart.toISOString().slice(0, 10), done: week.done, total: week.total, pct: week.pct })),
+    current: stats.current && { done: stats.current.done, total: stats.current.total, pct: stats.current.pct },
+    streak: stats.streak,
+    totals: stats.totals,
+    goals: stats.goals,
+    badgeCatalog: BADGE_DEFS.map(({ code, title, hint }) => ({ code, title, hint })),
+    badges: {
+      earned: ownedBadges.map((badge) => ({ code: badge.code, title: badge.title, earnedAt: badge.earnedAt })),
+      new: newlyEarned.map((badge) => badge.code)
+    }
   });
 }

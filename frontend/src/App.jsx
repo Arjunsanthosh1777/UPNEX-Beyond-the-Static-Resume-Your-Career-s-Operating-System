@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ScreenLoader } from "./components/Loading";
 
 // Route-level code splitting: each page becomes its own async chunk and is
 // fetched (then cached) only when its route is first visited.
@@ -34,7 +35,7 @@ function ProfileView() {
 }
 
 function Fallback() {
-  return <div className="screen-loader">LOADING…</div>;
+  return <ScreenLoader />;
 }
 
 export default function App() {

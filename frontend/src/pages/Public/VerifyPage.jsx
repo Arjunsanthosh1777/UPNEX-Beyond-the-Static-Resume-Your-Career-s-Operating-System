@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import QRCode from "qrcode";
 import { BadgeCheck, Check, Copy, FileText, ShieldCheck } from "lucide-react";
 import { Mark } from "../../components/Logo";
+import { ScreenLoader } from "../../components/Loading";
 import api from "../../services/api";
 import NotFound from "../NotFound/NotFound";
 
@@ -98,7 +99,7 @@ export default function VerifyPage() {
   }
 
   if (state.phase !== "ready") {
-    return <div className="screen-loader">{t("common.loading", "LOADING…")}</div>;
+    return <ScreenLoader label={t("common.loading", "LOADING…")} />;
   }
 
   const { verificationId: id, student, document: doc } = state.data;

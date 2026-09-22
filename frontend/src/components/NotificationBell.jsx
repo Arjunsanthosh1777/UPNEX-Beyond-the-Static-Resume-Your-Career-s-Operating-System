@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Bell, CheckCheck, CheckCircle2, Info, KeyRound, ShieldCheck, UploadCloud } from "lucide-react";
+import { Award, Bell, CalendarCheck, CheckCheck, CheckCircle2, Info, KeyRound, ShieldCheck, UploadCloud } from "lucide-react";
 import api from "../services/api";
+import { Spinner } from "./Loading";
 
-const TYPE_ICON = { login: KeyRound, verify: ShieldCheck, upload: UploadCloud, system: Info };
+const TYPE_ICON = { login: KeyRound, verify: ShieldCheck, upload: UploadCloud, study: CalendarCheck, badge: Award, system: Info };
 
 function timeAgo(iso) {
   const diff = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
@@ -91,7 +92,7 @@ export default function NotificationBell() {
             )}
           </div>
           <div className="notif-list">
-            {loading && <div className="notif-empty"><CheckCircle2 size={18} /> {t("common.loading", "LOADING…")}</div>}
+            {loading && <div className="notif-empty"><Spinner /> {t("common.loading", "LOADING…")}</div>}
             {!loading && items.length === 0 && (
               <div className="notif-empty"><CheckCircle2 size={18} /> {t("nav.noNotifications", "You're all caught up.")}</div>
             )}

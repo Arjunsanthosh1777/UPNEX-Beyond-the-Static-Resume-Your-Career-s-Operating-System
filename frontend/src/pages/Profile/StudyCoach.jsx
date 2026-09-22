@@ -1,15 +1,114 @@
 import { useEffect, useState } from "react";
-import { BookOpen, CalendarCheck, CalendarDays, ChartColumn, Download, Flame, GraduationCap, Lightbulb, Minus, NotebookPen, Printer, RotateCcw, Sparkles, Target, Trash2, TrendingDown, TrendingUp, X } from "lucide-react";
+import { Award, BookOpen, CalendarCheck, CalendarDays, ChartColumn, Download, Flame, GraduationCap, Lightbulb, Lock, Minus, NotebookPen, Printer, RotateCcw, Sparkles, Target, Trash2, TrendingDown, TrendingUp, X } from "lucide-react";
 import api from "../../services/api";
 import { useTranslation } from "react-i18next";
 import { Mark } from "../../components/Logo";
 
+import { ScreenLoader } from "../../components/Loading";
+
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const CHART_W = 640;
+const CHART_H = 190;
+const CHART_PAD = 26;
 
 function fmtDate(value) {
   try { return new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); }
   catch { return String(value || ""); }
+}
+
+function semesterLabel(entry) {
+  if (entry.semester == null && entry.year == null) return null;
+  return [entry.year, entry.semester != null ? `S${entry.semester}` : null].filter(Boolean).join(" · ");
+}
+
+function SubjectTrendChart({ subject, goalTarget }) {
+  const points = subject?.history || [];
+  if (!points.length) return null;
+  const { t } = useTranslation();
+  const padX = 34;
+  const padY = 14;
+  const plotW = CHART_W - padX * 2;
+  const plotH = CHART_H - padY * 2;
+  const xs = (index) => padX + (points.length === 1 ? plotW / 2 : (index / (points.length - 1)) * plotW);
+  const ys = (score) => padY + plotH - (Math.max(0, Math.min(score, 100)) / 100) * plotH;
+  const line = points.map((point, index) => `${xs(index).toFixed(1)},${ys(point.score).toFixed(1)}`).join(" ");
+  const area = points.length > 1
+    ? `M ${xs(0)},${ys(points[0].score)} L ${line.split(" ").join(" L ")} L ${xs(points.length - 1)},${padY + plotH} L ${xs(0)},${padY + plotH} Z`
+    : "";
+  const targetY = goalTarget != null ? ys(goalTarget) : null;
+  const labels = points.map((point, index) => semesterLabel(point) || fmtDate(point.at).slice(0, 10) || `#${index + 1}`);
+
+  return (
+    <div className="trend-chart">
+      <div className="trend-chart-meta">
+        <b>{subject.subject}</b>
+        <span className="trend-chart-avg">{t("studyCoach.trendAvg", "avg")} {subject.avg}%{goalTarget != null && <> · {t("studyCoach.trendTarget", "target")} {goalTarget}%</>}</span>
+      </div>
+      <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} role="img" aria-label={`${subject.subject} score trend`}>
+        <defs>
+          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7c5cff" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#7c5cff" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        {[0, 25, 50, 75, 100].map((value) => (
+          <g key={value}>
+            <line x1={padX} y1={ys(value)} x2={CHART_W - padX} y2={ys(value)} stroke="rgba(255,255,255,0.07)" strokeDasharray="4 5" />
+            <text x={padX - 6} y={ys(value) + 3} textAnchor="end" fontSize="9" fill="#6b7180">{value}</text>
+          </g>
+        ))}
+        {targetY != null && (
+          <g>
+            <line x1={padX} y1={targetY} x2={CHART_W - padX} y2={targetY} stroke="#97c7ff" strokeDasharray="6 4" />
+            <text x={CHART_W - padX} y={targetY - 5} textAnchor="end" fontSize="9" fill="#8ab8ee">target</text>
+          </g>
+        )}
+        {area && <path d={area} fill="url(#trendFill)" />}
+        <polyline points={line} fill="none" stroke="#b6a0ff" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+        {points.map((point, index) => (
+          <g key={`${index}-${point.at}`}>
+            <circle cx={xs(index)} cy={ys(point.score)} r="4" fill="#0d1017" stroke="#b6a0ff" strokeWidth="2" />
+            <text x={xs(index)} y={ys(point.score) - 9} textAnchor="middle" fontSize="9.5" fill="#a5abb8">{point.score}</text>
+            <text x={xs(index)} y={CHART_H - 4} textAnchor="middle" fontSize="8.5" fill="#6b7180">{labels[index]}</text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function GoalGapChart({ goals }) {
+  const { t } = useTranslation();
+  if (!goals?.length) {
+    return (
+      <div className="empty-state">
+        <Target size={17} />
+        {t("studyCoach.noGoalsChart", "No goals set yet — add a target on any subject to see the gap chart.")}
+      </div>
+    );
+  }
+  return (
+    <div className="gap-chart">
+      {goals.map((goal) => {
+        const avg = goal.avg ?? 0;
+        const trackWidth = Math.max(4, Math.round((goal.target / 100) * 100));
+        const fillWidth = Math.min(100, Math.round((avg / goal.target) * 100));
+        return (
+          <div className="gap-row" key={goal.subject}>
+            <div className="gap-row-head">
+              <b>{goal.subject}</b>
+              <span>{goal.met ? <em className="goal-met">{t("studyCoach.goalMet", "✓ Target met")}</em> : <em className="goal-gap">{avg}% → {goal.target}% · +{goal.gap}</em>}</span>
+            </div>
+            <div className="gap-track">
+              <i style={{ width: `${trackWidth}%` }}><b style={{ width: `${fillWidth}%` }} /></i>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function PanelHeading({ icon: Icon, eyebrow, title, action }) {
@@ -80,27 +179,38 @@ export default function StudyCoach({ profile }) {
   const [editingGoal, setEditingGoal] = useState("");
   const [savingGoal, setSavingGoal] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [studyGoals, setStudyGoals] = useState([]);
+  const [selectedSubject, setSelectedSubject] = useState("");
 
   useEffect(() => {
     let active = true;
-    Promise.all([api.get("/profile/coach"), api.get("/profile/study-planner"), api.get("/profile/study-progress")])
-      .then(([coachRes, planRes, progressRes]) => {
+    Promise.all([api.get("/profile/coach"), api.get("/profile/study-planner"), api.get("/profile/study-progress"), api.get("/profile/study-goals")])
+      .then(([coachRes, planRes, progressRes, goalsRes]) => {
         if (!active) return;
         setCoach(coachRes.data);
         setPlan(planRes.data);
         setProgress(progressRes.data);
+        setStudyGoals(goalsRes.data?.subjects || []);
       })
       .catch(() => { if (active) setError(t("studyCoach.loadFailed", "Couldn't load your study coach.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [t]);
 
-  if (loading) return <div className="screen-loader">{t("common.loading", "LOADING…")}</div>;
+  if (loading) return <ScreenLoader label={t("common.loading", "LOADING…")} />;
 
   const weaknesses = coach?.weaknesses || [];
   const strengths = coach?.strengths || [];
   const isEmpty = !coach || coach.empty;
   const currentSemester = coach?.currentSemester || null;
+  const subjects = coach?.subjects || [];
+  const trendSubject = subjects.find((entry) => entry.subject === selectedSubject) || subjects[0];
+  const goalTargetBySubject = new Map(studyGoals.map((goal) => [goal.subject.trim().toLowerCase(), goal.target]));
+  const goalTarget = trendSubject ? goalTargetBySubject.get(trendSubject.subject.trim().toLowerCase()) : null;
+  const earnedBadges = progress?.badges?.earned || [];
+  const newBadges = progress?.badges?.new || [];
+  const badgeCatalog = progress?.badgeCatalog || [];
+  const earnedCodes = new Set(earnedBadges.map((badge) => badge.code));
   const doneCount = plan ? Object.values(plan.done).filter(Boolean).length : 0;
   const total = plan?.total || 0;
 
@@ -270,6 +380,57 @@ export default function StudyCoach({ profile }) {
             <div className="consistency-stat"><Target size={16} className="stat-icon" /><strong>{progress?.goals?.set ?? 0}</strong><span>{t("studyCoach.goalsSetLabel", "goals set ({{met}} met)", { met: progress?.goals?.met ?? 0 })}</span></div>
             <div className="consistency-stat"><CalendarCheck size={16} className="stat-icon" /><strong>{progress?.totals?.weeksActive ?? 0}</strong><span>{t("studyCoach.weeksActive", "active weeks")}</span></div>
           </div>
+        </div>
+      </section>
+
+      <div className="feature-grid feature-study-glance">
+        <section className="app-panel feature-main-panel">
+          <PanelHeading icon={ChartColumn} eyebrow={t("studyCoach.trendEyebrow", "SCORES OVER TIME")} title={t("studyCoach.trendTitle", "Subject trend analysis")} />
+          {subjects.length ? (
+            <>
+              <div className="trend-chips">
+                {subjects.map((entry) => (
+                  <button type="button" key={entry.subject}
+                    className={`trend-chip ${trendSubject?.subject === entry.subject ? "active" : ""}`}
+                    onClick={() => setSelectedSubject(entry.subject)}>
+                    {entry.subject} <small>{entry.avg}%</small>
+                  </button>
+                ))}
+              </div>
+              {trendSubject ? (
+                <SubjectTrendChart subject={trendSubject} goalTarget={goalTarget} />
+              ) : null}
+            </>
+          ) : (
+            <div className="empty-state"><ChartColumn size={17} />{t("studyCoach.trendEmpty", "Add at least one mark and a trend line will appear here.")}</div>
+          )}
+        </section>
+        <section className="app-panel">
+          <PanelHeading icon={Target} eyebrow={t("studyCoach.gapEyebrow", "CURRENT AVG VS TARGET")} title={t("studyCoach.gapTitle", "Goal gap analysis")} />
+          <GoalGapChart goals={studyGoals} />
+        </section>
+      </div>
+
+      <section className="app-panel badges-panel">
+        <PanelHeading icon={Award} eyebrow={t("studyCoach.badgesEyebrow", "EARNED FROM REAL BEHAVIOUR")} title={t("studyCoach.badgesTitle", "Study badges")} />
+        <div className="badge-progress-line">
+          <span>{t("studyCoach.badgesCount", "{{earned}} of {{total}} badges", { earned: earnedBadges.length, total: badgeCatalog.length })}</span>
+          <i><b style={{ width: badgeCatalog.length ? `${Math.round((earnedBadges.length / badgeCatalog.length) * 100)}%` : 0 }} /></i>
+          <em>{t("studyCoach.badgesReadyNote", "Every badge adds points to your Career Passport readiness score.")}</em>
+        </div>
+        <div className="badge-grid">
+          {badgeCatalog.map((badge) => {
+            const just = newBadges.includes(badge.code);
+            const earned = just || earnedCodes.has(badge.code);
+            const info = earnedBadges.find((entry) => entry.code === badge.code);
+            return (
+              <div className={`badge-item ${earned ? "earned" : ""} ${just ? "just" : ""}`} key={badge.code}>
+                {earned ? <Award size={20} /> : <Lock size={15} />}
+                <b>{badge.title}</b>
+                <small>{just ? t("studyCoach.justEarned", "NEW!") : earned ? fmtDate(info?.earnedAt) : badge.hint}</small>
+              </div>
+            );
+          })}
         </div>
       </section>
 

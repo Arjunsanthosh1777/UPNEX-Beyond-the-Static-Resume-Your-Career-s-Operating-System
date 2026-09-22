@@ -55,6 +55,7 @@ model User {
   emailPrefs    Json?
   studyPlans    StudyPlan[]
   studyGoals    StudyGoal[]
+  studyBadges   StudyBadge[]
 }
 
 model Course {
@@ -195,6 +196,21 @@ model StudyGoal {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, subject])
+  @@index([userId])
+}
+
+// Auto-earned badges from real study behaviour (streaks, sessions, goals met).
+// They feed a small bonus into the shared profile readiness score so Smart
+// Study effort also moves the student's public career signal.
+model StudyBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  code     String
+  title    String
+  earnedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, code])
   @@index([userId])
 }
 

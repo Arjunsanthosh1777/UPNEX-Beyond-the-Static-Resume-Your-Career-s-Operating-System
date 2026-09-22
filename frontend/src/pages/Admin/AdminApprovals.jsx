@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, CheckCircle2, FileClock, ShieldCheck, X } from "lucide-react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { ScreenLoader } from "../../components/Loading";
 
 function fmtDate(value) {
   try {
@@ -57,7 +58,7 @@ export default function AdminApprovals() {
     }
   }
 
-  if (!user) return <div className="screen-loader">{t("common.loadingApp", "Loading UPNEX...")}</div>;
+  if (!user) return <ScreenLoader label={t("common.loadingApp", "Loading UPNEX...")} />;
 
   if (!isStaff) {
     return (
@@ -89,7 +90,7 @@ export default function AdminApprovals() {
         </div>
       )}
 
-      {loading && <div className="screen-loader">{t("common.loading", "LOADING…")}</div>}
+      {loading && <ScreenLoader label={t("common.loading", "LOADING…")} />}
 
       {!loading && docs.length === 0 && (
         <div className="admin-empty">
