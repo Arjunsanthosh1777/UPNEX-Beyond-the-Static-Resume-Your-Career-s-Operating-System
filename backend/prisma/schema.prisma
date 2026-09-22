@@ -56,6 +56,12 @@ model User {
   studyPlans    StudyPlan[]
   studyGoals    StudyGoal[]
   studyBadges   StudyBadge[]
+  clashHosted   ClashGame[]       @relation("ClashHost")
+  clashJoined   ClashGame[]       @relation("ClashGuest")
+  clashAnswers  ClashAnswer[]
+  clashPoints   Int               @default(0)
+  clashWins     Int               @default(0)
+  clashGames    Int               @default(0)
 }
 
 model Course {
@@ -333,4 +339,49 @@ model ProfileEvent {
 
   @@index([userId, createdAt])
   @@index([userId, kind, createdAt])
+}
+
+// A Clash arena session: two students answer the same live questions and the
+// higher score wins. Status walks waiting -> active -> finished (abandoned when
+// the guest never joins). questionOrder stores the resolved question set (with
+// the correct index) so results can be replayed long after the questions ship.
+model ClashGame {
+  id            String        @id @default(cuid())
+  code          String        @unique
+  status        String        @default("waiting")
+  hostId        String
+  guestId       String?
+  winnerId      String?
+  questionOrder Json?
+  scoreHost     Int           @default(0)
+  scoreGuest    Int           @default(0)
+  qIndex        Int           @default(0)
+  qDeadline     DateTime?
+  createdAt     DateTime      @default(now())
+  finishedAt    DateTime?
+  host          User          @relation("ClashHost", fields: [hostId], references: [id], onDelete: Cascade)
+  guest         User?         @relation("ClashGuest", fields: [guestId], references: [id], onDelete: SetNull)
+  answers       ClashAnswer[]
+
+  @@index([status, createdAt])
+  @@index([hostId, status])
+}
+
+// One locked-in answer per participant per question. The unique constraint is
+// what stops double-submits from awarding the same question twice.
+model ClashAnswer {
+  id          String     @id @default(cuid())
+  gameId      String
+  userId      String
+  qIndex      Int
+  answerIndex Int
+  correct     Boolean
+  timeLeft    Int
+  points      Int
+  createdAt   DateTime   @default(now())
+  game        ClashGame  @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId, qIndex])
+  @@index([gameId, userId])
 }

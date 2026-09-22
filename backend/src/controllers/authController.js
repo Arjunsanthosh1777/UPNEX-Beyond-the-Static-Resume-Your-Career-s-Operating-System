@@ -192,7 +192,7 @@ export function logout(req, res) {
 export async function me(req, res) {
   let user = await prisma.user.findUnique({
     where: { id: req.auth.id },
-    select: { id: true, name: true, email: true, username: true, role: true, avatar: true, preferredLanguage: true }
+    select: { id: true, name: true, email: true, username: true, role: true, avatar: true, preferredLanguage: true, clashPoints: true, clashWins: true, clashGames: true }
   });
 
   if (!user) return res.status(404).json({ message: "User not found." });
@@ -202,7 +202,7 @@ export async function me(req, res) {
     await assignUsername(prisma, user.id, user.name, user.email);
     user = await prisma.user.findUnique({
       where: { id: req.auth.id },
-      select: { id: true, name: true, email: true, username: true, role: true, avatar: true, preferredLanguage: true }
+      select: { id: true, name: true, email: true, username: true, role: true, avatar: true, preferredLanguage: true, clashPoints: true, clashWins: true, clashGames: true }
     });
   }
   res.json({ user });

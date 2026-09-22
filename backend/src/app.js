@@ -15,6 +15,7 @@ import publicRoutes from "./routes/publicRoutes.js";
 import storageRoutes from "./routes/storageRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import clashRoutes from "./routes/clashRoutes.js";
 import { ogHandler } from "./og.js";
 import multer from "multer";
 
@@ -58,6 +59,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/public", verifyLimiter, publicRoutes);
 app.use("/api/storage", storageRoutes);
+app.use("/api/clash", clashRoutes);
 
 // Public assets (branded OG image) and the crawler metadata shell, then - in
 // production where a frontend build exists next door - SPA static serving.

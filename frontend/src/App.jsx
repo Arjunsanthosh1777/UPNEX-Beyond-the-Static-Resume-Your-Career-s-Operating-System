@@ -14,6 +14,7 @@ const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 const PublicProfile = lazy(() => import("./pages/Public/PublicProfile"));
 const VerifyPage = lazy(() => import("./pages/Public/VerifyPage"));
 const AdminApprovals = lazy(() => import("./pages/Admin/AdminApprovals"));
+const Clash = lazy(() => import("./pages/Clash/Clash"));
 
 // Static app routes (login, register, terms, privacy, dashboard, profile/*)
 // rank above /:username in React Router's matching, so a reserved word typed
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/profile/:view" element={<Protected><ProfileView /></Protected>} />
         <Route path="/verify/:verificationId" element={<VerifyPage />} />
         <Route path="/admin" element={<Protected><AdminApprovals /></Protected>} />
+        <Route path="/clash" element={<Clash />} />
         <Route path="/:username" element={<PublicProfile />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

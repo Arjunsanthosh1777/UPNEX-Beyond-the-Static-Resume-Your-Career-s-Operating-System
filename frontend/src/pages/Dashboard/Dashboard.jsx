@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, BrainCircuit, CheckCircle2, ClipboardCheck, FileCheck2, FolderKanban, GraduationCap, LayoutDashboard, Menu, Network, Plus, ScrollText, Search, Settings, Share2, ShieldCheck, Sparkles, Target, Trash2, Upload, Users, X } from "lucide-react";
+import { ArrowRight, BrainCircuit, CheckCircle2, ClipboardCheck, FileCheck2, FolderKanban, GraduationCap, LayoutDashboard, Menu, Network, Plus, ScrollText, Search, Settings, Share2, ShieldCheck, Sparkles, Swords, Target, Trash2, Upload, Users, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStudentProfile } from "../../hooks/useStudentProfile";
@@ -28,6 +28,7 @@ export default function Dashboard() {
     [FolderKanban, t("nav.portfolio", "Live Portfolio"), "/profile/portfolio"],
     [Network, t("nav.skillBridge", "Skill Bridge"), "/profile/skill-bridge"],
     [ScrollText, t("nav.passport", "Career Passport"), "/profile/passport"],
+    [Swords, t("nav.clash", "Clash Arena"), "/clash"],
     [Settings, t("nav.settings", "Settings"), "/profile/settings"]
   ];
 
