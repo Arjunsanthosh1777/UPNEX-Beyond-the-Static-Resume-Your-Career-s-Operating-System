@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, AtSign, BadgeCheck, BrainCircuit, CheckCircle2, ExternalLink, FileDown, FolderKanban, Github, GraduationCap, Languages, LayoutDashboard, Linkedin, MapPin, Menu, Network, Plus, Save, ScrollText, Search, Settings, Share2, ShieldCheck, Sparkles, Star, Target, Trash2, Users, X } from "lucide-react";
+import { ArrowRight, AtSign, BadgeCheck, BrainCircuit, CalendarCheck, CheckCircle2, ExternalLink, FileDown, FolderKanban, Github, GraduationCap, Languages, LayoutDashboard, Linkedin, MapPin, Menu, Network, NotebookPen, Plus, Save, ScrollText, Search, Settings, Share2, ShieldCheck, Sparkles, Star, Target, Trash2, Users, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStudentProfile, emptyProfile } from "../../hooks/useStudentProfile";
@@ -12,12 +12,14 @@ import SkillGraph from "../../components/profile/SkillGraph";
 import ShareModal from "../../components/profile/ShareModal";
 import CareerPassport from "../../components/profile/CareerPassport";
 import PortfolioExport from "./PortfolioExport";
+import StudyCoach from "./StudyCoach";
 import { Mark } from "../../components/Logo";
 
 const navigation = (t) => [
   [LayoutDashboard, t("nav.overview", "Overview"), "/dashboard"],
   [ShieldCheck, t("nav.vault", "Digital Vault"), "/profile/vault"],
   [Target, t("nav.analysis", "Subject Analysis"), "/profile/analysis"],
+  [CalendarCheck, t("nav.studyCoach", "Smart Study"), "/profile/study"],
   [BrainCircuit, t("nav.careers", "Career Guidance"), "/profile/careers"],
   [FolderKanban, t("nav.portfolio", "Live Portfolio"), "/profile/portfolio"],
   [Network, t("nav.skillBridge", "Skill Bridge"), "/profile/skill-bridge"],
@@ -25,7 +27,7 @@ const navigation = (t) => [
   [Settings, t("nav.settings", "Settings"), "/profile/settings"]
 ];
 
-const heroNs = { vault: "vault", analysis: "analysis", careers: "careers", portfolio: "portfolio", "skill-bridge": "skillBridge", passport: "passport", settings: "settings" };
+const heroNs = { vault: "vault", analysis: "analysis", study: "studyCoach", careers: "careers", portfolio: "portfolio", "skill-bridge": "skillBridge", passport: "passport", settings: "settings" };
 
 export default function ProfileFeature({ type }) {
   const location = useLocation();
@@ -66,6 +68,7 @@ export default function ProfileFeature({ type }) {
         {type === "export" && <PortfolioExport profile={profile} />}
         {type === "vault" && <Vault profile={profile} uploadDocument={uploadDocument} loadProfile={loadProfile} />}
         {type === "analysis" && <Analysis profile={profile} mark={mark} setMark={setMark} addMark={addMark} />}
+        {type === "study" && <StudyCoach profile={profile} />}
         {type === "careers" && <Careers profile={profile} />}
         {type === "portfolio" && <PortfolioProfile profile={profile} identity={identity} setIdentity={setIdentity} saveIdentity={saveIdentity} project={project} setProject={setProject} addProject={addProject} />}
         {type === "skill-bridge" && <SkillBridge profile={profile} />}

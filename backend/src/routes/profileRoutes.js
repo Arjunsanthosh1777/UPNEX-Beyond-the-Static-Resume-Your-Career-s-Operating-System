@@ -36,6 +36,7 @@ import {
   uploadPhoto
 } from "../controllers/profileController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
+import { getCoach, getPlanner, updatePlanner } from "../controllers/studyController.js";
 
 // Files are buffered in memory (10 MB cap, one file) and written to disk by
 // the controller only after validation; nothing ever lands in a public folder.
@@ -89,5 +90,10 @@ router.delete("/achievements/:id", removeAchievement);
 router.get("/analytics", getAnalytics);
 router.post("/ai/headline", generateHeadlines);
 router.post("/ai/about", generateAbout);
+
+// Smart education: subject coach + weekly study planner
+router.get("/coach", getCoach);
+router.get("/study-planner", getPlanner);
+router.patch("/study-planner", updatePlanner);
 
 export default router;

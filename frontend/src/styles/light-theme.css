@@ -397,3 +397,25 @@ html[data-theme="light"] body {
 [data-theme="light"] .staff-only { color: #171b23; }
 [data-theme="light"] .staff-only h1 { color: #171b23; }
 [data-theme="light"] .staff-only p { color: #5b6273; }
+
+/* ---------- Smart Study ---------- */
+[data-theme="light"] .study-coach-card,
+[data-theme="light"] .plan-day,
+[data-theme="light"] .plan-slot,
+[data-theme="light"] .course-chip { border-color: #e7e9ee; background: #ffffff; }
+[data-theme="light"] .coach-subject-line strong,
+[data-theme="light"] .slot-title b,
+[data-theme="light"] .course-chip b { color: #171b23; }
+[data-theme="light"] .coach-subject-line small,
+[data-theme="light"] .coach-tips li,
+[data-theme="light"] .slot-body small,
+[data-theme="light"] .coach-no-course,
+[data-theme="light"] .plan-progress span { color: #6b7280; }
+[data-theme="light"] .coach-subject-line b,
+[data-theme="light"] .slot-check { color: #171b23; }
+[data-theme="light"] .slot-check { border-color: #cdd2dc; }
+[data-theme="light"] .course-chip { background: rgba(124, 77, 255, 0.05); }
+[data-theme="light"] .plan-day summary { color: #242938; }
+[data-theme="light"] .plan-day[open] summary { border-bottom-color: #e7e9ee; }
+[data-theme="light"] .plan-progress i { background: #eceef2; }
+[data-theme="light"] .plan-slot { background: rgba(124, 77, 255, 0.03); }

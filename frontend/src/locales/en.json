@@ -50,6 +50,7 @@
     "overview": "Overview",
     "vault": "Digital Vault",
     "analysis": "Subject Analysis",
+    "studyCoach": "Smart Study",
     "careers": "Career Guidance",
     "portfolio": "Live Portfolio",
     "settings": "Settings",
@@ -298,8 +299,33 @@
     "strongestHint": "the category showing the most momentum",
     "emptyHint": "Add scores to reveal your subject landscape."
   },
+  "studyCoach": {
+    "kicker": "03 / SMART STUDY",
+    "titleLine": "A coach and a plan built from your real marks.",
+    "subtitle": "UPNEX flags weak subjects, matches courses to fix them, and plans your week.",
+    "coachKpi": "SUBJECTS TO FIX",
+    "needsWork": "weakest subjects getting coaching",
+    "planKpi": "WEEKLY PLAN",
+    "sessionsDone": "{{done}} of {{total}} study sessions done",
+    "noSessions": "no sessions scheduled yet",
+    "strongKpi": "STRONGEST SUBJECT",
+    "noStrengths": "add marks to reveal them",
+    "coachEyebrow": "DERIVED FROM YOUR MARKS",
+    "coachTitle": "Smart subject coach",
+    "latestScore": "latest {{latest}}% · {{count}} entries",
+    "fixWith": "Fix it with a course",
+    "noCourse": "No catalogue course matches this subject yet — keep practising.",
+    "allHealthy": "No subjects need work right now. Keep every subject above 60%.",
+    "emptyCoach": "Add your marks and UPNEX becomes your personal coach.",
+    "planEyebrow": "THIS WEEK · AUTO-GENERATED",
+    "planTitle": "Weekly study planner",
+    "planEmpty": "The plan builds from your weak subjects and incomplete Skill Bridge courses. Add marks or enroll in a course, then come back.",
+    "markDone": "Mark as done",
+    "markUndone": "Mark as not done",
+    "loadFailed": "Couldn't load your study coach."
+  },
   "careers": {
-    "kicker": "03 / CAREER GUIDANCE",
+    "kicker": "04 / CAREER GUIDANCE",
     "titleLine": "Choose a direction with evidence.",
     "subtitle": "Career matches built from your actual marks and proof-of-work.",
     "roleTitle": "AI ENHANCEMENT COORDINATOR",
@@ -316,7 +342,7 @@
     "emptyTitle": "Your next path starts with your data."
   },
   "portfolio": {
-    "kicker": "04 / LIVE PORTFOLIO",
+    "kicker": "05 / LIVE PORTFOLIO",
     "titleLine": "Make your work discoverable.",
     "subtitle": "One verified link that shows your evidence, progress and projects.",
     "publicPreview": "PUBLIC PROFILE PREVIEW",
@@ -340,7 +366,7 @@
     "emptyHint": "Add a project to make your profile recruiter-ready."
   },
   "settings": {
-    "kicker": "05 / SETTINGS",
+    "kicker": "06 / SETTINGS",
     "titleLine": "Make UPNEX yours.",
     "subtitle": "Language, privacy and account preferences in one place.",
     "langRegion": "Language & Region",

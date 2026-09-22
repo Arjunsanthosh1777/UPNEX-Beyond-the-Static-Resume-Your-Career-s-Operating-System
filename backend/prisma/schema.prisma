@@ -53,6 +53,7 @@ model User {
   notifications Notification[]
   outboxEmails  OutboxEmail[]
   emailPrefs    Json?
+  studyPlans    StudyPlan[]
 }
 
 model Course {
@@ -167,6 +168,20 @@ model AcademicMark {
 
   @@index([userId])
   @@index([docId])
+}
+
+model StudyPlan {
+  id        String   @id @default(cuid())
+  userId    String
+  weekStart DateTime
+  plan      Json
+  done      Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([userId])
 }
 
 model Project {
