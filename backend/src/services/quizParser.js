@@ -1,16 +1,39 @@
-import pdf from "pdf-parse/lib/pdf-parse.js";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { recognizeImage } from "./ocr.js";
 
+async function extractPdfText(bytes) {
+  const task = getDocument({ data: new Uint8Array(bytes), isEvalSupported: false, useSystemFonts: true });
+  const doc = await task.promise;
+  try {
+    let text = "";
+    for (let i = 1; i <= doc.numPages; i += 1) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      let line = "";
+      for (const item of content.items) {
+        if (typeof item.str === "string") line += item.str;
+        if (item.hasEOL) {
+          text += `${line}\n`;
+          line = "";
+        }
+      }
+      if (line) text += `${line}\n`;
+    }
+    return text;
+  } finally {
+    await task.destroy().catch(() => {});
+  }
+}
+
 // Reads question-paper text out of an uploaded file: PDFs use their embedded
-// text layer (pdf-parse), images fall back to OCR. Scanned PDFs have no text
+// text layer (pdfjs-dist), images fall back to OCR. Scanned PDFs have no text
 // layer and are handled as the empty-string case so the API can tell the user
 // to upload a screenshot instead.
 export async function extractQuizText(buffer, mime) {
   const kind = String(mime || "").toLowerCase();
   if (kind === "application/pdf") {
     try {
-      const data = await pdf(buffer);
-      const text = String(data?.text || "").replace(/\r/g, "").trim();
+      const text = String(await extractPdfText(buffer)).replace(/\r/g, "").trim();
       return { text, kind: "pdf" };
     } catch {
       return { text: "", kind: "pdf" };
