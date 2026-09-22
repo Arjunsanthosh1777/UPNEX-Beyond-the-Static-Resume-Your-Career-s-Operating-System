@@ -10,12 +10,31 @@
     <meta property="og:title" content="UPNEX — Smart Education Platform" />
     <meta property="og:description" content="Verify credentials, analyze your academics, and share your career record." />
     <meta property="og:image" content="/og/og-default.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="UPNEX — Smart Education Platform" />
     <meta name="twitter:description" content="Verify credentials, analyze your academics, and share your career record." />
     <title>UPNEX — Smart Education Platform</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cg transform='rotate(-30 12 12)'%3E%3Ccircle cx='7.3' cy='3.2' r='1.45'/%3E%3Crect x='5.5' y='4.7' width='3.6' height='14.6' rx='1.8'/%3E%3Crect x='14.9' y='4.7' width='3.6' height='14.6' rx='1.8'/%3E%3Ccircle cx='16.7' cy='20.8' r='1.45'/%3E%3C/g%3E%3C/svg%3E" />
     <script src="/config.js"></script>
+    <script>
+      // Relative OG meta breaks link previews on non-crawler fetches; render
+      // the absolute URL at runtime. Crawlers get the server-rendered shell
+      // from og.js instead, which is already absolute.
+      (function () {
+        var origin = window.location.origin;
+        var image = origin + "/og/og-default.png";
+        var set = function (attr) {
+          var map = { property: "og:image", name: "twitter:image" };
+          for (var key in map) {
+            var el = document.querySelector('meta[' + key + '="' + map[key] + '"]');
+            if (el) el.setAttribute("content", image);
+          }
+        };
+        set();
+      })();
+    </script>
   </head>
   <body style="background:#000;color:#fff">
     <div id="root"></div>

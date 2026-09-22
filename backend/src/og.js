@@ -25,9 +25,28 @@ function escapeHtml(value) {
 async function userMeta(username) {
   const user = await prisma.user.findUnique({ where: { username } });
   if (!user || user.profilePublic === false) return null;
+
+  let description = snippet(user.headline || `${user.name || "This student"} builds a verified career record on UPNEX.`);
+  try {
+    const [marks, projects] = await Promise.all([
+      prisma.academicMark.findMany({ where: { userId: user.id }, select: { score: true } }),
+      prisma.project.count({ where: { userId: user.id } })
+    ]);
+    if (marks.length) {
+      const average = Math.round(marks.reduce((sum, mark) => sum + mark.score, 0) / marks.length);
+      const parts = [`${average}% average across ${marks.length} subject${marks.length === 1 ? "" : "s"}`];
+      if (projects) parts.push(`${projects} project${projects === 1 ? "" : "s"}`);
+      description = snippet(`${user.name || "This student"} — ${parts.join(" · ")}. Verified on UPNEX.`);
+    } else if (projects) {
+      description = snippet(`${user.name || "This student"} — ${projects} project${projects === 1 ? "" : "s"}. Verified on UPNEX.`);
+    }
+  } catch {
+    // keep the headline fallback if the stats query fails
+  }
+
   return {
     title: `${user.name || "Student"} on UPNEX`,
-    description: snippet(user.headline || `${user.name || "This student"} builds a verified career record on UPNEX.`)
+    description
   };
 }
 
@@ -73,6 +92,7 @@ function renderOg(meta, req) {
     <meta charset="utf-8" />
     <title>${title}</title>
     <meta name="description" content="${description}" />
+    <link rel="canonical" href="${url}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="UPNEX" />
     <meta property="og:title" content="${title}" />

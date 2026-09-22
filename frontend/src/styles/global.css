@@ -973,6 +973,29 @@ select:focus-visible, [tabindex]:not([tabindex="-1"]):focus-visible {
   padding: 12px 18px;
   border-radius: 14px;
 }
+.hero-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.demo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  color: #ffd58a;
+  background: rgba(255, 198, 118, 0.1);
+  border: 1px solid rgba(255, 198, 118, 0.35);
+  padding: 10px 14px;
+  border-radius: 12px;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.demo-chip:hover { background: rgba(255, 198, 118, 0.2); transform: translateY(-1px); }
+.demo-chip:active { transform: translateY(0); }
 .readiness-pill strong { font-size: 26px; color: #e6ddff; }
 .readiness-pill span { color: #9aa1ad; font-size: 12.5px; }
 .feature-score svg { color: #b6a0ff; }

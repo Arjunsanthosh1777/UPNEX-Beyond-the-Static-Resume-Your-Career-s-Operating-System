@@ -78,6 +78,12 @@ html[data-theme="light"] body {
 }
 [data-theme="light"] .readiness-pill strong { color: #3d2f86; }
 [data-theme="light"] .readiness-pill span { color: #6b7280; }
+[data-theme="light"] .demo-chip {
+  color: #9a6a00;
+  background: rgba(255, 183, 77, 0.12);
+  border: 1px solid rgba(255, 183, 77, 0.45);
+}
+[data-theme="light"] .demo-chip:hover { background: rgba(255, 183, 77, 0.22); }
 [data-theme="light"] .mini-kicker { color: #7c4dff; }
 
 /* ---------- Panels / cards ---------- */

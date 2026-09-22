@@ -37,6 +37,7 @@ import {
 } from "../controllers/profileController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { deleteStudyGoal, getCoach, getPlanner, getStudyGoals, getStudyProgress, updatePlanner, upsertStudyGoal } from "../controllers/studyController.js";
+import { loadDemoData } from "../controllers/demoController.js";
 
 // Files are buffered in memory (10 MB cap, one file) and written to disk by
 // the controller only after validation; nothing ever lands in a public folder.
@@ -48,6 +49,7 @@ const upload = multer({
 const router = Router();
 router.use(requireAuth);
 router.get("/", getProfile);
+router.post("/demo/load", loadDemoData);
 router.patch("/identity", updateProfile);
 router.patch("/preferences", updatePreferences);
 router.patch("/username", updateUsername);

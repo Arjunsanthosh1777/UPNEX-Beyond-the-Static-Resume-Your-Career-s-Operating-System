@@ -223,6 +223,23 @@ export function useStudentProfile({
     }
   }, [loadProfile]);
 
+  const loadDemoData = useCallback(async () => {
+    try {
+      const { data } = await api.post("/profile/demo/load");
+      if (aliveRef.current && data?.loaded) {
+        const total = data.counts ? Object.values(data.counts).reduce((sum, n) => sum + (Number(n) || 0), 0) : 0;
+        setMessage(t("dashboard.demoLoaded", "Sample data loaded — explore your live UPNEX profile.", { count: total }));
+      }
+      await loadProfile();
+      return data || {};
+    } catch (error) {
+      const conflict = error.response?.status === 409;
+      if (aliveRef.current) setMessage(conflict ? t("dashboard.demoExists", "Sample data is already loaded.") : messageFrom(error, t("dashboard.demoFailed", "Could not load sample data.")));
+      await loadProfile();
+      return conflict ? { loaded: false } : {};
+    }
+  }, [loadProfile]);
+
   return {
     profile,
     setProfile,
@@ -245,6 +262,7 @@ export function useStudentProfile({
     saveDetails,
     saveUsername,
     saveProject,
-    deleteProject
+    deleteProject,
+    loadDemoData
   };
 }
