@@ -54,6 +54,7 @@ model User {
   outboxEmails  OutboxEmail[]
   emailPrefs    Json?
   studyPlans    StudyPlan[]
+  studyGoals    StudyGoal[]
 }
 
 model Course {
@@ -181,6 +182,19 @@ model StudyPlan {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, weekStart])
+  @@index([userId])
+}
+
+model StudyGoal {
+  id        String   @id @default(cuid())
+  userId    String
+  subject   String
+  target    Int      @default(60)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subject])
   @@index([userId])
 }
 

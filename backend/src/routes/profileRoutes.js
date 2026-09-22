@@ -36,7 +36,7 @@ import {
   uploadPhoto
 } from "../controllers/profileController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
-import { getCoach, getPlanner, updatePlanner } from "../controllers/studyController.js";
+import { deleteStudyGoal, getCoach, getPlanner, getStudyGoals, getStudyProgress, updatePlanner, upsertStudyGoal } from "../controllers/studyController.js";
 
 // Files are buffered in memory (10 MB cap, one file) and written to disk by
 // the controller only after validation; nothing ever lands in a public folder.
@@ -95,5 +95,9 @@ router.post("/ai/about", generateAbout);
 router.get("/coach", getCoach);
 router.get("/study-planner", getPlanner);
 router.patch("/study-planner", updatePlanner);
+router.get("/study-goals", getStudyGoals);
+router.put("/study-goals", upsertStudyGoal);
+router.delete("/study-goals/:subject", deleteStudyGoal);
+router.get("/study-progress", getStudyProgress);
 
 export default router;
