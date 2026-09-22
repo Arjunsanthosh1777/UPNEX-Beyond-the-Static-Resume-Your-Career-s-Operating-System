@@ -20,6 +20,40 @@ export async function recognizeImage(buffer) {
   return text || null;
 }
 
+const DEFAULT_PSM = "3";
+
+// OCR page-segmentation modes to try for photos of printed pages. Mode 3 (auto)
+// suits normal text blocks, 6 (single block) fits dense question papers, and
+// 11 (sparse text) helps when the image has lots of whitespace or columns.
+const PHOTO_PSMS = ["3", "6", "11"];
+
+// Runs OCR against an image buffer trying several page-segmentation modes and
+// keeps the longest output. Photos of exam questions vary wildly in layout, so
+// a single PSM leaks or mangles text regularly. The shared worker is reused
+// and always reset afterwards; tesseract.js serialises worker calls, so these
+// attempts cannot interleave with other requests.
+export async function recognizeImageModes(buffer, modes = PHOTO_PSMS) {
+  if (!buffer) return null;
+  const worker = await getWorker();
+  let best = null;
+  try {
+    for (const psm of modes) {
+      await worker.setParameters({ tessedit_pageseg_mode: psm });
+      const { data } = await worker.recognize(buffer);
+      const text = String(data.text || "").trim();
+      if (!text) continue;
+      if (!best || text.length > best.length) best = text;
+    }
+  } finally {
+    try {
+      await worker.setParameters({ tessedit_pageseg_mode: DEFAULT_PSM });
+    } catch {
+      // ignore reset failures; the next call re-sets the mode anyway
+    }
+  }
+  return best;
+}
+
 const FRAGMENT_STOPWORDS = /^(subj|subject|max|maximum|obtain|total|grade|result|semester|term|roll|reg|univ|university|exam|examcenter|theory|pract|credit|arrear|failed|pass|marks|code|duration|date|board|degree|year|attende|percentage|scheme|page|no|student|name|index|checked|internal|external|summary|award|cgpa|gpa|sgpa|sign|position|part|division|result|pass|fail|contin|regg|college|school)/i;
 
 // Turns a single OCR line into a subject+score candidate when possible.

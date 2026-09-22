@@ -1,5 +1,5 @@
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-import { recognizeImage } from "./ocr.js";
+import { recognizeImageModes } from "./ocr.js";
 
 async function extractPdfText(bytes) {
   const task = getDocument({ data: new Uint8Array(bytes), isEvalSupported: false, useSystemFonts: true });
@@ -39,7 +39,7 @@ export async function extractQuizText(buffer, mime) {
       return { text: "", kind: "pdf" };
     }
   }
-  const text = await recognizeImage(buffer).catch(() => null);
+  const text = await recognizeImageModes(buffer).catch(() => null);
   return { text: String(text || "").trim(), kind: "image" };
 }
 
@@ -89,50 +89,82 @@ function parseAnswerKey(text) {
   return entries;
 }
 
-const LETTER_OPTION_RE = /^[\[({\s]*([a-eA-E])\s*[)\]}.:\-]\s+(.+)$/;
-const NUM_LINE_RE = /^[\[({\s]*(\d{1,4})\s*([).:])\s+(.+)$/;
 const MAX_QUESTIONS = 12;
 const MAX_OPTIONS = 4;
 
-function pushOption(current, key, text) {
-  if (current.letterMap[key] !== undefined) {
-    const at = current.letterMap[key];
-    current.options[at] = `${current.options[at]} ${text}`.replace(/\s+/g, " ");
-    return;
+// Splits a single OCR/PDF line into marker tokens whose payloads overlap the
+// gaps between them. "1. prompt A) x B) y" becomes:
+//   [{lead:"" seped q(1)), {lead:" prompt " letter a}, {lead:" x " letter b}]
+// A marker is a number + "." or ")" or a single letter a–e + one of `)]}.:-`.
+// Letters must be preceded by a space / line start / "(" so prose like
+// "e.g. text" is not split, and "3.14"-style decimals are skipped.
+function lineTokens(line) {
+  const MARKER_RE = /(?<=^|\s|\()(\d{1,4})([.)])|(?<=^|\s|\()([a-eA-E])([)\]}.:-])/g;
+  const tokens = [];
+  let last = 0;
+  let match;
+  MARKER_RE.lastIndex = 0;
+  while ((match = MARKER_RE.exec(line)) !== null) {
+    if (match[2] === ".") {
+      // "3.14" decimal guard: the chunk straight after "3." is itself numeric.
+      const firstWord = line.slice(match.index + match[0].length).trimStart().split(/\s/)[0];
+      if (/^\d+(\.\d+)?$/.test(firstWord)) continue;
+    }
+    if (match[3] && match[3].toLowerCase() === "e" && /^g\./i.test(line.slice(match.index + 2))) {
+      // "e.g." phrasing, not an option "e." followed by content.
+      continue;
+    }
+    const kind = match[1] === undefined ? "o" : "q";
+    tokens.push({
+      kind,
+      sep: match[1] === undefined ? match[4] : match[2],
+      num: kind === "q" ? match[1] : null,
+      letter: kind === "o" ? match[3].toLowerCase() : null,
+      lead: line.slice(last, match.index)
+    });
+    last = match.index + match[0].length;
   }
-  if (Object.keys(current.letterMap).length < MAX_OPTIONS) {
-    const at = current.options.length;
-    current.letterMap[key] = at;
-    current.options.push(text.replace(/\s+/g, " "));
+  const trailer = line.slice(last);
+  if (tokens.length === 0) {
+    const t = line.trim();
+    return t ? [{ kind: "t", text: t }] : [];
   }
+  // Each token's content is the text between it and the next marker.
+  tokens.forEach((token, index) => {
+    token.content = (index + 1 < tokens.length ? tokens[index + 1].lead : trailer)
+      .replace(/\s+/g, " ")
+      .trim();
+  });
+  return tokens;
 }
 
-// Heuristic MCQ block parser. Numbered lines with a dot separator open a new
-// question; "1)", "2)…" style lines are treated as options when what follows
-// really is a run of numbered options; lettered lines are always options.
-// Non-matching lines extend the current prompt (before any option) or the last
-// option (after). An explicit answer key is honoured when present, otherwise
-// answers are left -1 for the host to confirm.
+// True when a near-following non-empty line opens with a numbered-option
+// marker ("1) a", "2) b", "3: …") — used to decide whether "1) foo" belongs to
+// a question's option set or starts a fresh question.
+function numericRunAhead(body, fromLine) {
+  const to = Math.min(fromLine + 6, body.length);
+  for (let j = fromLine + 1; j < to; j += 1) {
+    const line = body[j];
+    if (!line) continue;
+    const first = lineTokens(line)[0];
+    return Boolean(first && first.kind === "q" && first.sep !== ".");
+  }
+  return false;
+}
+
+// Heuristic MCQ block parser over a token stream. Question numbers open
+// questions; lettered and "1) 2)…" numbered runs become options whether they
+// sit on their own lines or share a line with the prompt (photo OCR collapses
+// these). Unnumbered prompts are kept. An explicit answer key is honoured when
+// present, otherwise answers are left -1 for the host to confirm.
 export function parseMcq(text, { category } = {}) {
-  const lines = String(text || "").split(/\r?\n/).map((line) => line.trim());
+  const rawLines = String(text || "").split(/\r?\n/).map((line) => line.trim());
   const answerKey = parseAnswerKey(text);
   const categorySniff = sniffCategory(text) || category || null;
   const questions = [];
   let current = null;
 
-  // Drop everything from the answer-key header onward so the key text can't
-  // leak into questions or options; the key itself was already parsed above.
-  const keyStart = lines.findIndex((l) => /^\s*(answer\s*key|answers?\s*[:.])/i.test(l));
-  const bodyEnd = keyStart >= 0 ? keyStart : lines.length;
-
-  const nextNumeric = (at) => {
-    for (let j = at + 1; j < lines.length; j += 1) {
-      if (!lines[j]) continue;
-      const m = NUM_LINE_RE.exec(lines[j]);
-      return Boolean(m) && m[2] !== ".";
-    }
-    return false;
-  };
+  const bodyEnd = rawLines.findIndex((l) => /^\s*(answer\s*key|answers?\s*[:.])/i.test(l));
 
   const finalize = () => {
     if (!current) return;
@@ -160,66 +192,100 @@ export function parseMcq(text, { category } = {}) {
 
   const newQuestion = (number, prompt) => {
     finalize();
-    current = { number, prompt, options: [], letterMap: {}, optsAreNumeric: null, category: categorySniff };
+    current = { number, prompt, options: [], letterMap: {}, optsAreNumeric: false, category: categorySniff };
   };
 
-  for (let i = 0; i < bodyEnd; i += 1) {
-    const line = lines[i];
-    if (!line) continue;
+  const pushOption = (key, content) => {
+    if (current.letterMap[key] !== undefined) {
+      const at = current.letterMap[key];
+      current.options[at] = `${current.options[at]} ${content}`.replace(/\s+/g, " ");
+      return;
+    }
+    if (Object.keys(current.letterMap).length < MAX_OPTIONS) {
+      const at = current.options.length;
+      current.letterMap[key] = at;
+      current.options.push(content.replace(/\s+/g, " "));
+    }
+  };
 
-    if (!current) {
-      const m = NUM_LINE_RE.exec(line);
-      if (m) {
-        if (m[2] === "." || !nextNumeric(i)) {
-          newQuestion(m[1], m[3]);
+  const body = bodyEnd >= 0 ? rawLines.slice(0, bodyEnd) : rawLines;
+  for (let li = 0; li < body.length; li += 1) {
+    const line = body[li];
+    if (!line) continue;
+    const tokens = lineTokens(line);
+    if (tokens.length === 0) continue;
+
+    for (let t = 0; t < tokens.length; t += 1) {
+      const token = tokens[t];
+      const leading = t === 0;
+
+      if (token.kind === "t") {
+        if (!current) newQuestion(null, token.text);
+        else if (current.options.length === 0) current.prompt = `${current.prompt} ${token.text}`.replace(/\s+/g, " ").trim();
+        else {
+          const last = current.options[current.options.length - 1];
+          if (last) current.options[current.options.length - 1] = `${last} ${token.text}`.replace(/\s+/g, " ");
+        }
+        continue;
+      }
+
+      if (token.kind === "q") {
+        const inlineRun = !leading && t + 1 < tokens.length && tokens[t + 1].kind === "q" && tokens[t + 1].sep === ")";
+        if (leading) {
+          if (token.sep === ".") {
+            newQuestion(Number(token.num) || null, token.lead.trim() ? `${token.lead.trim()} ${token.content}` : token.content);
+            continue;
+          }
+          if (current && current.optsAreNumeric) {
+            pushOption(token.num, token.content);
+            continue;
+          }
+          const beginsOptions =
+            (t + 1 < tokens.length && tokens[t + 1].kind === "q" && tokens[t + 1].sep === ")") ||
+            numericRunAhead(body, li) ||
+            Boolean(current && current.options.length === 0);
+          if (beginsOptions) {
+            // numbered-option line: "1) a 2) b" or "1) a" beneath a prompt.
+            if (!current) newQuestion(null, token.lead.trim() || "");
+            else if (token.lead.trim() && !current.prompt) current.prompt = token.lead.trim();
+            current.optsAreNumeric = true;
+            pushOption(token.num, token.content);
+            continue;
+          }
+          newQuestion(Number(token.num) || null, token.lead.trim() ? `${token.lead.trim()} ${token.content}` : token.content);
           continue;
         }
-        current = { number: null, prompt: "", options: [], letterMap: {}, optsAreNumeric: true, category: categorySniff };
-        pushOption(current, m[1], m[3]);
+        // inline numeric marker on a question line: "Which? 1) a 2) b"
+        if (current && current.optsAreNumeric) {
+          pushOption(token.num, token.content);
+          continue;
+        }
+        if (current && current.options.length === 0 && inlineRun) {
+          if (token.lead.trim() && !current.prompt) current.prompt = token.lead.trim();
+          current.optsAreNumeric = true;
+          pushOption(token.num, token.content);
+          continue;
+        }
+        // mid-line digit markers after finished options open the next question;
+        // their lead already belongs to the previous option's content.
+        newQuestion(Number(token.num) || null, token.content);
         continue;
       }
-      const lm = LETTER_OPTION_RE.exec(line);
-      if (lm) {
-        current = { number: null, prompt: "", options: [], letterMap: {}, optsAreNumeric: false, category: categorySniff };
-        pushOption(current, lm[1].toLowerCase(), lm[2]);
-      }
-      continue;
-    }
 
-    const m = NUM_LINE_RE.exec(line);
-    if (m) {
-      if (m[2] === ".") {
-        newQuestion(m[1], m[3]);
+      // letter option
+      if (current && current.optsAreNumeric && current.options.length !== 0) {
+        // stray letters after numbered options read as continuation text.
+        const last = current.options[current.options.length - 1];
+        if (last) current.options[current.options.length - 1] = `${last} ${token.lead}${token.letter}${token.sep} ${token.content}`.replace(/\s+/g, " ").trim();
         continue;
       }
-      if (current.optsAreNumeric === true || (current.options.length === 0 && nextNumeric(i))) {
-        if (current.options.length === 0 && current.optsAreNumeric !== true) current.optsAreNumeric = true;
-        pushOption(current, m[1], m[3]);
-        continue;
+      if (!current) newQuestion(null, "");
+      current.optsAreNumeric = false;
+      if (leading && token.lead.trim() && current.options.length === 0 && !current.prompt) {
+        // "Which…? A) x B) y" — the text before the first marker is the prompt.
+        current.prompt = token.lead.trim();
       }
-      newQuestion(m[1], m[3]);
-      continue;
-    }
-
-    const lm = LETTER_OPTION_RE.exec(line);
-    if (lm) {
-      if (current.optsAreNumeric !== true) {
-        current.optsAreNumeric = false;
-        pushOption(current, lm[1].toLowerCase(), lm[2]);
-        continue;
-      }
-      if (current.options.length === 0) {
-        current.optsAreNumeric = false;
-        pushOption(current, lm[1].toLowerCase(), lm[2]);
-        continue;
-      }
-    }
-
-    if (current.options.length === 0) {
-      current.prompt = `${current.prompt} ${line}`.trim().replace(/\s+/g, " ");
-    } else {
-      const last = current.options[current.options.length - 1];
-      if (last) current.options[current.options.length - 1] = `${last} ${line}`.replace(/\s+/g, " ");
+      pushOption(token.letter, token.content);
     }
   }
   finalize();
