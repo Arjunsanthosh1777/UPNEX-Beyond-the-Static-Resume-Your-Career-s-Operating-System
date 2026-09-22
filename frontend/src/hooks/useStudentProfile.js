@@ -133,6 +133,18 @@ export function useStudentProfile({
     }
   }, [mark, initialMark, markErrorMessageText, loadProfile]);
 
+  const deleteMark = useCallback(async (id) => {
+    try {
+      await api.delete(`/profile/marks/${id}`);
+      if (aliveRef.current) setMessage(t("analysis.markRemoved", "Mark removed."));
+      await loadProfile();
+      return { ok: true };
+    } catch (error) {
+      if (aliveRef.current) setMessage(messageFrom(error, t("analysis.markRemoveFailed", "Could not remove that mark.")));
+      return { ok: false, message: messageFrom(error, "") };
+    }
+  }, [loadProfile]);
+
   const addProject = useCallback(async (event) => {
     event.preventDefault();
     try {
@@ -227,6 +239,7 @@ export function useStudentProfile({
     loadProfile,
     addDocument,
     addMark,
+    deleteMark,
     addProject,
     saveIdentity,
     saveDetails,

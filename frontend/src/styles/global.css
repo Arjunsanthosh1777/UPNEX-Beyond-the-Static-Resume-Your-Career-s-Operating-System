@@ -1084,6 +1084,12 @@ img, svg, video { display: block; max-width: 100%; }
 .mark-row i { flex: 1; height: 7px; border-radius: 99px; background: rgba(255, 255, 255, 0.07); overflow: hidden; display: block; }
 .mark-row i b { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #8f6bff, #cbb8ff); }
 .mark-row strong { font-size: 13px; width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+.mark-row .mark-del { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: #6b7180; cursor: pointer; transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease; }
+.mark-row:hover .mark-del { background: rgba(255, 92, 122, 0.12); color: #ff7b9c; }
+.mark-row .mark-del:hover { transform: scale(1.1); color: #ff5c7a; }
+.mark-row .mark-del:disabled { opacity: 0.5; cursor: wait; }
+.mark-del-spin { width: 11px; height: 11px; border-radius: 50%; border: 2px solid rgba(255, 92, 122, 0.35); border-top-color: #ff7b9c; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .compact-form { display: flex; gap: 8px; }
 .compact-form input {

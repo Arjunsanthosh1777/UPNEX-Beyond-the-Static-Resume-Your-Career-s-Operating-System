@@ -297,7 +297,10 @@
     "invalidSubject": "Enter a valid subject and score.",
     "firstMark": "Add your first mark",
     "strongestHint": "the category showing the most momentum",
-    "emptyHint": "Add scores to reveal your subject landscape."
+    "emptyHint": "Add scores to reveal your subject landscape.",
+    "deleteMark": "Delete mark",
+    "markRemoved": "Mark removed.",
+    "markRemoveFailed": "Could not remove that mark."
   },
   "studyCoach": {
     "kicker": "03 / SMART STUDY",

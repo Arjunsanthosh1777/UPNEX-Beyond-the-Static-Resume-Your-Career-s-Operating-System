@@ -471,3 +471,5 @@ html[data-theme="light"] body {
 [data-theme="light"] .land-type b i { background: #6c4df0; }
 [data-theme="light"] .land-scroll { border-color: rgba(23, 27, 35, 0.35); }
 [data-theme="light"] .land-scroll span { background: #6c4df0; }
+[data-theme="light"] .mark-row:hover .mark-del { background: rgba(214, 51, 108, 0.1); }
+[data-theme="light"] .mark-row .mark-del { color: #8b91a3; }
