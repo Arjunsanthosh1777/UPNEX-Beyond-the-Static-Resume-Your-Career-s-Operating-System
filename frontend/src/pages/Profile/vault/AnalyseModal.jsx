@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { FileScan, Loader2, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { FileScan, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { analyseDocument, getDocumentAccess, saveMarksBatch } from "./vaultUtils";
 import { useTranslation } from "react-i18next";
+import { launchConfetti } from "../../../components/Confetti";
+
+const SCAN_PHASE_COUNT = 4;
 
 export default function AnalyseModal({ document, onClose, onSaved }) {
   const { t } = useTranslation();
@@ -11,6 +14,20 @@ export default function AnalyseModal({ document, onClose, onSaved }) {
   const [category, setCategory] = useState("General");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [scanPhase, setScanPhase] = useState(0);
+
+  // Rotate the scan captions while the OCR request is in flight.
+  useEffect(() => {
+    if (stage !== "working") { setScanPhase(0); return undefined; }
+    const id = setInterval(() => setScanPhase((prev) => (prev + 1) % SCAN_PHASE_COUNT), 1500);
+    return () => clearInterval(id);
+  }, [stage]);
+
+  // Confetti the moment the table arrives.
+  useEffect(() => {
+    if (stage === "confirm" && rows.length) launchConfetti({ count: 130 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
 
   useEffect(() => {
     if (!document.hasFile || document.previewKind !== "image") return;
@@ -107,10 +124,22 @@ export default function AnalyseModal({ document, onClose, onSaved }) {
             )}
 
             {stage === "working" && (
-              <div className="ocr-busy">
-                <Loader2 className="spin" size={22} />
-                <strong>{t("vault.ocrReading", "Reading your marksheet…")}</strong>
+              <div className="ocr-scan">
+                <div className="ocr-scan-doc">
+                  {previewUrl ? <img src={previewUrl} alt="" decoding="async" /> : <FileScan size={26} />}
+                  <span className="ocr-scan-line" />
+                  <span className="ocr-scan-shimmer" />
+                  <i className="ocr-corner ocr-tl" /><i className="ocr-corner ocr-tr" />
+                  <i className="ocr-corner ocr-bl" /><i className="ocr-corner ocr-br" />
+                </div>
+                <strong>{[
+                  t("vault.ocrScan1", "Locating the sheet…"),
+                  t("vault.ocrScan2", "Reading subject names…"),
+                  t("vault.ocrScan3", "Extracting scores…"),
+                  t("vault.ocrScan4", "Finalising the table…")
+                ][scanPhase]}</strong>
                 <span>{t("vault.ocrFirstRun", "The first analysis downloads the OCR language model, so it can take a minute.")}</span>
+                <div className="ocr-scan-status"><b style={{ width: `${((scanPhase + 1) / SCAN_PHASE_COUNT) * 100}%` }} /></div>
               </div>
             )}
 

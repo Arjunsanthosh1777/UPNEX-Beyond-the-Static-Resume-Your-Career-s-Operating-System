@@ -1,8 +1,39 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeSwitcher from "../../components/ThemeSwitcher";
 import { Mark } from "../../components/Logo";
+
+const LAND_WORDS = ["Verified.", "Analysed.", "Career-mapped.", "Shareable."];
+
+function useTypewriter(words = LAND_WORDS, typeMs = 75, deleteMs = 34, pauseMs = 1700) {
+  const reduced = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [text, setText] = useState(() => (reduced ? words[0] : ""));
+  useEffect(() => {
+    if (reduced) return () => {};
+    let index = 0;
+    let char = 0;
+    let deleting = false;
+    let timer = 0;
+    const tick = () => {
+      const word = words[index % words.length];
+      if (!deleting) {
+        char += 1;
+        setText(word.slice(0, char));
+        if (char === word.length) { deleting = true; timer = setTimeout(tick, pauseMs); }
+        else timer = setTimeout(tick, typeMs);
+      } else {
+        char -= 1;
+        setText(word.slice(0, char));
+        if (char === 0) { deleting = false; index += 1; timer = setTimeout(tick, 320); }
+        else timer = setTimeout(tick, deleteMs);
+      }
+    };
+    timer = setTimeout(tick, 500);
+    return () => clearTimeout(timer);
+  }, [words, typeMs, deleteMs, pauseMs, reduced]);
+  return text;
+}
 
 function Spark() {
   return (
@@ -14,6 +45,7 @@ function Spark() {
 
 export default function Home() {
   const { t } = useTranslation();
+  const typed = useTypewriter();
   const closeMobile = () => {
     const root = document.querySelector(".landing");
     const burger = root?.querySelector(".land-burger");
@@ -90,6 +122,17 @@ export default function Home() {
       document.removeEventListener("keydown", onKey);
       cleanup();
     };
+  }, []);
+
+  useEffect(() => {
+    const stats = document.querySelector(".land-stats");
+    if (!stats) return () => {};
+    if (!("IntersectionObserver" in window)) { stats.classList.add("in"); return () => {}; }
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) { stats.classList.add("in"); io.disconnect(); }
+    }, { threshold: 0.2 });
+    io.observe(stats);
+    return () => io.disconnect();
   }, []);
 
   return (
@@ -174,10 +217,14 @@ export default function Home() {
           {t("home.heroTag", "UPNEX turns academic marks, projects and certificates into one living, verifiable profile — and uses the evidence to map the career paths you should actually pursue.")}
         </p>
 
+        <p className="land-type appear">{t("home.typeLabel", "Your evidence,")} <b>{typed}<i /></b></p>
+
         <div className="land-cta-row">
           <a className="land-btn land-btn--solid appear" href="/register">{t("home.startForFree", "Start for Free")}</a>
           <a className="land-btn land-btn--ghost appear" href="/login">{t("home.signIn", "Sign In")}</a>
         </div>
+
+        <div className="land-scroll" aria-hidden="true"><span /></div>
       </main>
 
       <footer className="land-stats">

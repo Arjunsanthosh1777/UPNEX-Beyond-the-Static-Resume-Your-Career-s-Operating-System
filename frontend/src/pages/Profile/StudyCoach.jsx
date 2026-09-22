@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Award, BookOpen, CalendarCheck, CalendarDays, ChartColumn, Download, Flame, GraduationCap, Lightbulb, Lock, Minus, NotebookPen, Printer, RotateCcw, Sparkles, Target, Trash2, TrendingDown, TrendingUp, X } from "lucide-react";
 import api from "../../services/api";
 import { useTranslation } from "react-i18next";
 import { Mark } from "../../components/Logo";
+import ProgressRing from "../../components/ProgressRing";
+import { launchConfetti } from "../../components/Confetti";
 
 import { ScreenLoader } from "../../components/Loading";
 
@@ -181,6 +183,28 @@ export default function StudyCoach({ profile }) {
   const [exporting, setExporting] = useState(false);
   const [studyGoals, setStudyGoals] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState("");
+  const seenBadgesRef = useRef([]);
+  const finishedCelebratedRef = useRef(false);
+
+  // Celebrate the moment: confetti when a fresh badge unlocks, or when the
+  // whole week's plan gets ticked off.
+  useEffect(() => {
+    const fresh = progress?.badges?.new || [];
+    const unreported = fresh.filter((code) => !seenBadgesRef.current.includes(code));
+    if (unreported.length) launchConfetti({ count: 160 });
+    seenBadgesRef.current = fresh;
+  }, [progress?.badges?.new]);
+
+  useEffect(() => {
+    const done = plan ? Object.values(plan.done).filter(Boolean).length : 0;
+    const total = plan?.total || 0;
+    if (total && done >= total) {
+      if (!finishedCelebratedRef.current && total > 0) launchConfetti({ count: 120 });
+      finishedCelebratedRef.current = true;
+    } else if (done < total) {
+      finishedCelebratedRef.current = false;
+    }
+  }, [plan]);
 
   useEffect(() => {
     let active = true;
@@ -255,7 +279,7 @@ export default function StudyCoach({ profile }) {
       {error && <div className="profile-message">{error}</div>}
       <div className="analysis-overview">
         <div className="app-panel"><span className="feature-eyebrow">{t("studyCoach.coachKpi", "SUBJECTS TO FIX")}</span><strong className="big-number">{weaknesses.length}</strong><p>{t("studyCoach.needsWork", "weakest subjects getting coaching")}</p></div>
-        <div className="app-panel"><span className="feature-eyebrow">{t("studyCoach.planKpi", "WEEKLY PLAN")}</span><strong className="big-number">{total ? Math.round((doneCount / total) * 100) : 0}%</strong><p>{total ? t("studyCoach.sessionsDone", "{{done}} of {{total}} study sessions done", { done: doneCount, total }) : t("studyCoach.noSessions", "no sessions scheduled yet")}</p></div>
+        <div className="app-panel kpi-ring"><span className="feature-eyebrow">{t("studyCoach.planKpi", "WEEKLY PLAN")}</span><ProgressRing value={total ? Math.round((doneCount / total) * 100) : 0} size={84} thickness={8}>{(shown) => <span className="kpi-ring-center"><b>{shown}%</b><small>{doneCount}/{total}</small></span>}</ProgressRing><p>{total ? t("studyCoach.sessionsDone", "{{done}} of {{total}} study sessions done", { done: doneCount, total }) : t("studyCoach.noSessions", "no sessions scheduled yet")}</p></div>
         <div className="app-panel"><span className="feature-eyebrow">{t("studyCoach.strongKpi", "STRONGEST SUBJECT")}</span><strong className="big-label">{strengths[0]?.subject || "—"}</strong><p>{strengths.map((entry) => `${entry.subject} ${entry.avg}%`).join(" · ") || t("studyCoach.noStrengths", "add marks to reveal them")}</p></div>
       </div>
 
