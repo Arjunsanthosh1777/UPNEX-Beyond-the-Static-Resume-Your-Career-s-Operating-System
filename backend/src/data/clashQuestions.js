@@ -71,7 +71,8 @@ function shuffle(list) {
 }
 
 function pick(category) {
-  const { question } = shuffle(category.questions)[0];
+  const shuffled = shuffle(category.questions);
+  const question = shuffled[0];
   if (!question) return null;
   return { category: category.category, prompt: question.prompt, options: question.options, answer: question.answer };
 }
