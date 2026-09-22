@@ -22,3 +22,4 @@ firebase-debug.log
 170707/
 # Firebase Data Connect emulator stores a local PostgreSQL data dir here
 dataconnect/.dataconnect/
+backend/eng.traineddata
