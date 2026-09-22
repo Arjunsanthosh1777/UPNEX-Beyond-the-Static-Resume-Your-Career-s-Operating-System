@@ -353,6 +353,7 @@ model ClashGame {
   guestId       String?
   winnerId      String?
   questionOrder Json?
+  source        String        @default("builtin")
   scoreHost     Int           @default(0)
   scoreGuest    Int           @default(0)
   qIndex        Int           @default(0)

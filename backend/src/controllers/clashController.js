@@ -43,6 +43,7 @@ function statePayload(game, userId) {
     id: game.id,
     code: game.code,
     status: game.status,
+    source: game.source || "builtin",
     scoreHost: game.scoreHost,
     scoreGuest: game.scoreGuest,
     qIndex: game.qIndex,
@@ -109,6 +110,7 @@ async function loadGame(gameId, userId) {
   return game;
 }
 
+export { statePayload, loadGame };
 // Advance the duel: once both players have answered (or the timer ran out) move
 // to the next question, and finish the game when the set is exhausted. Run
 // inside a transaction; the unique (game, user, qIndex) index makes competing
@@ -244,10 +246,61 @@ export async function startGame(req, res) {
 
   await prisma.clashGame.update({
     where: { id: game.id },
-    data: { status: "active", questionOrder: pickClashQuestions(), qIndex: 0, qDeadline: new Date(Date.now() + QUESTION_TIME_MS) }
+    data: {
+      status: "active",
+      questionOrder: game.questionOrder ?? pickClashQuestions(),
+      qIndex: 0,
+      qDeadline: new Date(Date.now() + QUESTION_TIME_MS)
+    }
   });
   res.json({ ok: true });
 }
+
+// Stores a host-confirmed question set (from a PDF/photo import) on a pending
+// arena. A null payload rolls the arena back to the built-in random quiz.
+export async function setGameQuestions(req, res) {
+  const game = await prisma.clashGame.findUnique({ where: { id: req.params.id } });
+  if (!game) return res.status(404).json({ message: "Arena not found." });
+  if (game.hostId !== req.auth.id) return res.status(403).json({ message: "Only the host can set the questions." });
+  if (game.status !== "waiting") return res.status(409).json({ message: "Questions can only be changed before the arena starts." });
+
+  if (req.body?.questions == null) {
+    await prisma.clashGame.update({ where: { id: game.id }, data: { questionOrder: null, source: "builtin" } });
+    const refreshed = await loadGame(game.id, req.auth.id);
+    return res.json({ state: statePayload(refreshed, req.auth.id) });
+  }
+
+  const { questions } = req.body;
+  if (!Array.isArray(questions) || questions.length < 1 || questions.length > QUIZ_MAX_QUESTIONS) {
+    return res.status(400).json({ message: `A quiz needs between 1 and ${QUIZ_MAX_QUESTIONS} questions.` });
+  }
+
+  const cleaned = [];
+  const seen = new Set();
+  for (const raw of questions) {
+    const prompt = String(raw?.prompt || "").trim().replace(/\s+/g, " ");
+    if (!prompt || prompt.length < 3) continue;
+    const options = Array.isArray(raw?.options)
+      ? raw.options.map((o) => String(o || "").trim().replace(/\s+/g, " ")).filter(Boolean)
+      : [];
+    if (options.length < 2 || options.length > 4) continue;
+    const answer = Number(raw?.answer);
+    if (!Number.isInteger(answer) || answer < 0 || answer >= options.length) continue;
+    const key = prompt.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cleaned.push({ category: "PDF Quiz", prompt, options, answer });
+  }
+  if (!cleaned.length) {
+    return res.status(400).json({ message: "Fix the questions first — each needs 2 to 4 options and a marked answer." });
+  }
+
+  await prisma.clashGame.update({ where: { id: game.id }, data: { questionOrder: cleaned, source: "pdf" } });
+  const refreshed = await loadGame(game.id, req.auth.id);
+  res.json({ state: statePayload(refreshed, req.auth.id) });
+}
+
+const QUIZ_MAX_QUESTIONS = 10;
 
 export async function answerQuestion(req, res) {
   const userId = req.auth.id;
@@ -264,7 +317,7 @@ export async function answerQuestion(req, res) {
   }
   const answerIndex = Number(req.body?.answerIndex);
   if (side === "guest" && game.guestId !== userId) return res.status(403).json({ message: "You are not part of this arena." });
-  if (!Number.isInteger(answerIndex) || answerIndex < 0 || answerIndex > 3) {
+  if (!Number.isInteger(answerIndex) || answerIndex < 0 || answerIndex >= order[qIndex].options.length) {
     return res.status(400).json({ message: "Pick a valid option." });
   }
 

@@ -438,4 +438,152 @@
   .clash-panels { grid-template-columns: 1fr; }
   .clash-options { grid-template-columns: 1fr; }
   .clash-round-body b { white-space: normal; }
+}.clash-waiting { color: #9aa1ad; }
+
+/* ---------- PDF / photo quiz import ---------- */
+.clash-pdf-zone {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(169, 139, 255, 0.25);
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.clash-pdf-empty,
+.clash-pdf-loaded {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 620px;
+  text-align: center;
+}
+.clash-pdf-hint {
+  margin: 0;
+  color: #9aa1ad;
+  font-size: 12.5px;
+  max-width: 480px;
+}
+.clash-pdf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b6f0c5;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+.clash-link-btn {
+  background: none;
+  border: 0;
+  color: #b6a0ff;
+  cursor: pointer;
+  font-size: 12.5px;
+  text-decoration: underline;
+}
+
+/* ---------- quiz review overlay ---------- */
+.clash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(4, 4, 10, 0.78);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 34px 16px;
+  overflow-y: auto;
+}
+.clash-review-card {
+  width: 100%;
+  max-width: 680px;
+  background: #131321;
+  border: 1px solid rgba(169, 139, 255, 0.3);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+.clash-review-head h3 { margin: 0; font-size: 20px; }
+.clash-review-head p { margin: 6px 0 0; color: #9aa1ad; font-size: 13.5px; line-height: 1.5; }
+.clash-pdf-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  color: #b6f0c5;
+  font-size: 12.5px;
+}
+.clash-pdf-qs {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+.clash-pdf-q {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(169, 139, 255, 0.06);
+  border: 1px solid rgba(169, 139, 255, 0.16);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.clash-pdf-q-body { flex: 1; min-width: 0; }
+.clash-pdf-q-body b { display: block; font-size: 14px; line-height: 1.45; color: #f3eeff; }
+.clash-pdf-opts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.clash-pdf-opts button {
+  text-align: left;
+  font-size: 13px;
+  color: #cfc3f0;
+  background: rgba(169, 139, 255, 0.07);
+  border: 1px solid rgba(169, 139, 255, 0.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.clash-pdf-opts button:hover { border-color: rgba(169, 139, 255, 0.5); }
+.clash-pdf-opts button.picked {
+  border-color: #ffd58a;
+  background: rgba(255, 198, 118, 0.14);
+  color: #ffe9c4;
+  font-weight: 700;
+}
+.clash-pdf-del {
+  flex: 0 0 auto;
+  background: none;
+  border: 0;
+  color: #ff8888;
+  cursor: pointer;
+  padding: 4px;
+}
+.clash-pdf-del:hover { color: #ff5f5f; }
+.clash-review-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.clash-pdf-meta {
+  margin-right: auto;
+  color: #9aa1ad;
+  font-size: 12.5px;
+}
+.clash-review-actions .clash-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

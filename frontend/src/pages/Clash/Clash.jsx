@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Check, Copy, Crown, Play, RotateCcw, Swords, Timer, Trophy, Zap } from "lucide-react";
+import { Check, Copy, Crown, FileUp, Play, RotateCcw, Swords, Timer, Trash2, Trophy, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -31,7 +31,13 @@ export default function Clash() {
   const [picked, setPicked] = useState(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [quiz, setQuiz] = useState(null);
+  const [quizNotes, setQuizNotes] = useState(null);
+  const [quizAnswers, setQuizAnswers] = useState(null);
+  const [quizBusy, setQuizBusy] = useState(false);
+  const [quizPanel, setQuizPanel] = useState(false);
   const pollRef = useRef(null);
+  const fileRef = useRef(null);
 
   const stateCode = params.get("code") ? String(params.get("code")).slice(0, 8).toUpperCase() : "";
 
@@ -170,8 +176,76 @@ export default function Clash() {
     setPicked(null);
     setPendingJoin("");
     setJoinInput("");
+    setQuiz(null);
+    setQuizNotes(null);
+    setQuizAnswers(null);
+    setQuizPanel(false);
     localStorage.removeItem("upnex_clash");
     loadLeaderboard();
+  };
+
+  const onQuizFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setQuizBusy(true);
+    setFlash("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const { data } = await api.post("/clash/quizpdf", form, { timeout: 120000 });
+      setQuiz(data.questions);
+      setQuizNotes(data.notes);
+      setQuizAnswers(data.questions.map((q) => q.answer));
+      setQuizPanel(true);
+    } catch (error) {
+      setFlash(messageFrom(error, t("clash.pdfFail", "Could not read that quiz.")));
+    } finally {
+      setQuizBusy(false);
+    }
+  };
+
+  const applyQuiz = async () => {
+    if (!quiz || quizAnswers.some((a) => a < 0)) {
+      setFlash(t("clash.pdfNeedsAns", "Mark the correct answer for every question first."));
+      return;
+    }
+    try {
+      const questions = quiz.map((q, qi) => ({ prompt: q.prompt, options: q.options, answer: quizAnswers[qi] }));
+      const { data } = await api.post(`/clash/games/${game.id}/questions`, { questions });
+      setGame(data.state);
+      setQuizPanel(false);
+      setQuiz(null);
+      setQuizNotes(null);
+      setQuizAnswers(null);
+    } catch (error) {
+      setFlash(messageFrom(error, t("clash.pdfUseFail", "Could not save those questions.")));
+    }
+  };
+
+  const clearPdfQuiz = async () => {
+    try {
+      const { data } = await api.post(`/clash/games/${game.id}/questions`, { questions: null });
+      setGame(data.state);
+    } catch (error) {
+      setFlash(messageFrom(error, t("clash.pdfResetFail", "Could not switch quizzes.")));
+    }
+  };
+
+  const removeQuizQ = (qi) => {
+    if (quiz.length <= 1) {
+      setFlash(t("clash.pdfMinOne", "Keep at least one question."));
+      return;
+    }
+    setQuiz((prev) => prev.filter((_, i) => i !== qi));
+    setQuizAnswers((prev) => prev.filter((_, i) => i !== qi));
+  };
+
+  const discardQuiz = () => {
+    setQuiz(null);
+    setQuizNotes(null);
+    setQuizAnswers(null);
+    setQuizPanel(false);
   };
 
   const requireSignIn = !user || user.guest;
@@ -288,6 +362,24 @@ export default function Clash() {
           ) : (
             <p className="clash-waiting">{t("clash.waitingText", "Ping your friend on WhatsApp — the arena starts the moment they join.")}</p>
           )}
+          {game.host?.id === user?.id && (
+            <div className="clash-pdf-zone">
+              <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" hidden onChange={onQuizFile} />
+              {game.source === "pdf" ? (
+                <div className="clash-pdf-loaded">
+                  <span className="clash-pdf-badge"><FileUp size={14} /> {t("clash.pdfBadgeOn", "Using your uploaded quiz")} · {game.questionCount} {t("clash.questions", "questions")}</span>
+                  <button type="button" className="clash-link-btn" onClick={clearPdfQuiz}>{t("clash.pdfReset", "Use the random quiz instead")}</button>
+                </div>
+              ) : (
+                <div className="clash-pdf-empty">
+                  <button type="button" className="clash-secondary" onClick={() => fileRef.current?.click()} disabled={quizBusy}>
+                    <FileUp size={15} /> {quizBusy ? t("clash.pdfReading", "Reading your paper…") : t("clash.pdfImport", "Import questions from a PDF / photo")}
+                  </button>
+                  <p className="clash-pdf-hint">{t("clash.pdfHint", "Upload a question paper — we read the MCQs, auto-detect the answer key if it's printed, and you confirm the answers before the clash.")}</p>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       )}
 
@@ -384,6 +476,59 @@ export default function Clash() {
             <button type="button" className="clash-secondary" onClick={reset}>{t("clash.backArena", "Back to arena")}</button>
           </div>
         </section>
+      )}
+
+      {quizPanel && quiz && (
+        <div className="clash-overlay" role="dialog" aria-modal="true" aria-label={t("clash.pdfReviewTitle", "Review your questions")}>
+          <div className="clash-review-card">
+            <div className="clash-review-head">
+              <h3>{t("clash.pdfReviewTitle", "Review your questions")}</h3>
+              <p>{t("clash.pdfReviewSub", "Mark the correct answer for each one — it decides who scores the points.")}</p>
+              {quizNotes?.answerKeyFound ? (
+                <p className="clash-pdf-note"><Check size={13} /> {t("clash.pdfKeyFound", "Answer key detected — correct answers were pre-filled.")}</p>
+              ) : (
+                <p className="clash-pdf-note">{t("clash.pdfNoKey", "No answer key found — mark the correct answer for each question.")}</p>
+              )}
+              {quizNotes?.truncated && <p className="clash-pdf-note">{t("clash.pdfTruncated", "Only the first 10 questions were used.")}</p>}
+            </div>
+            <ol className="clash-pdf-qs">
+              {quiz.map((q, qi) => (
+                <li key={qi} className="clash-pdf-q">
+                  <div className="clash-pdf-q-body">
+                    <b>{qi + 1}. {q.prompt}</b>
+                    <div className="clash-pdf-opts">
+                      {q.options.map((option, oi) => (
+                        <button
+                          type="button"
+                          key={oi}
+                          className={quizAnswers?.[qi] === oi ? "picked" : ""}
+                          onClick={() => setQuizAnswers((prev) => prev.map((a, i) => (i === qi ? oi : a)))}
+                        >
+                          {(oi + 10).toString(36).toUpperCase()}. {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button type="button" className="clash-pdf-del" onClick={() => removeQuizQ(qi)} aria-label="remove question">
+                    <Trash2 size={15} />
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <div className="clash-review-actions">
+              <span className="clash-pdf-meta">
+                {quiz.length} {t("clash.questions", "questions")} ·{" "}
+                {quizAnswers.some((a) => a < 0)
+                  ? `${quizAnswers.filter((a) => a < 0).length} ${t("clash.pdfNeedMark", "need an answer")}`
+                  : t("clash.pdfAllAnswered", "all answers marked")}
+              </span>
+              <button type="button" className="clash-secondary" onClick={discardQuiz}>{t("clash.pdfCancel", "Cancel")}</button>
+              <button type="button" className="clash-primary" onClick={applyQuiz} disabled={quizAnswers.some((a) => a < 0)}>
+                <Play size={15} /> {t("clash.pdfUse", "Use these questions")}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
