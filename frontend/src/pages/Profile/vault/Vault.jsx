@@ -168,7 +168,7 @@ export default function Vault({ profile, uploadDocument, loadProfile }) {
           onClose={() => setAnalyseDoc(null)}
           onSaved={(count) => {
             setAnalyseDoc(null);
-            loadProfile().then(() => push(t("vault.ocrSaved", { count }), "success"));
+            loadProfile().then(() => push(t("vault.ocrSaved", "{{count}} mark(s) saved to your analysis", { count }), "success"));
           }}
         />
       )}

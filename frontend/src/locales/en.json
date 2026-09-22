@@ -60,7 +60,17 @@
     "studentProfileShort": "Student profile",
     "backToUpnex": "Back to UPNEX",
     "searchPlaceholder": "Search your profile...",
-    "readiness": "readiness"
+    "readiness": "readiness",
+    "notifications": {
+      "_one": "Notification",
+      "_other": "Notifications"
+    },
+    "markAllRead": "Mark all read",
+    "skillBridge": "Skill Bridge",
+    "passport": "Career Passport",
+    "reviewQueue": "Review queue",
+    "share": "Share",
+    "export": "Export PDF"
   },
   "app": {
     "kicker": "YOUR UPNEX PROFILE",
@@ -112,7 +122,8 @@
     "secureVault": "Secure credential vault",
     "getStarted": "Get Started",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "typeLabel": "Your evidence,"
   },
   "auth": {
     "loginTitle": "Sign in to UPNEX",
@@ -277,7 +288,33 @@
     "editDocument": "Edit document details",
     "dismiss": "Dismiss notification",
     "searchDocuments": "Search documents",
-    "detailsSaved": "Document details saved."
+    "detailsSaved": "Document details saved.",
+    "ocrNoMarks": "No marks could be read. Try a clearer, straight-on photo of your marksheet.",
+    "ocrEmpty": "Add at least one subject before saving.",
+    "ocrTitle": "Analyse marksheet",
+    "ocrHint": "UPNEX reads the subjects and marks straight from this marksheet photo — nothing is saved until you confirm every row below.",
+    "ocrStart": "Start reading",
+    "ocrScan1": "Locating the sheet…",
+    "ocrScan2": "Reading subject names…",
+    "ocrScan3": "Extracting scores…",
+    "ocrScan4": "Finalising the table…",
+    "ocrFirstRun": "The first analysis downloads the OCR language model, so it can take a minute.",
+    "ocrErrorHint": "Make sure the whole marksheet is in frame, evenly lit, and not rotated.",
+    "ocrRetry": "Try again",
+    "ocrCategory": "Category",
+    "ocrCategoryPh": "e.g. Semester 3",
+    "ocrSubject": "Subject",
+    "ocrScore": "Score",
+    "ocrMax": "Max",
+    "ocrGrade": "Grade",
+    "ocrRemoveRow": "Remove subject",
+    "ocrAddRow": "Add subject",
+    "ocrSaving": "Saving…",
+    "ocrSave": "Save to profile",
+    "menuAnalyse": "Analyse marks",
+    "ocrSaved": "marks saved to your analysis",
+    "ocrSaved_one": "{{count}} mark saved to your analysi",
+    "ocrSaved_other": "{{count}} marks saved to your analysis"
   },
   "analysis": {
     "kicker": "02 / SUBJECT ANALYSIS",
@@ -402,7 +439,11 @@
     "projectsPublished_other": "{{count}} projects published",
     "profileSaved": "Student profile saved.",
     "invalidLinks": "Use valid GitHub and LinkedIn profile links.",
-    "emptyHint": "Add a project to make your profile recruiter-ready."
+    "emptyHint": "Add a project to make your profile recruiter-ready.",
+    "projectsPublished": {
+      "_one": "{{count}} projects published",
+      "_other": "{{count}} projects published"
+    }
   },
   "settings": {
     "kicker": "06 / SETTINGS",
@@ -423,7 +464,17 @@
     "useRecommended": "Use {{language}}",
     "continueEnglish": "Continue with English",
     "chooseLang": "Choose your preferred language",
-    "chooseLangHint": "You can change this later in Settings."
+    "chooseLangHint": "You can change this later in Settings.",
+    "profileSaved": "Profile details saved.",
+    "profileSaveFailed": "Could not save your profile.",
+    "usernameSaved": "Username updated.",
+    "usernameFailed": "Could not update username.",
+    "projectSaved": "Project updated.",
+    "projectFailed": "Could not update project.",
+    "projectDeleted": "Project removed.",
+    "projectDeleteFailed": "Could not remove project.",
+    "usernameLive": "Username is live at upnex.ai/{{username}}",
+    "saveUsername": "Make live"
   },
   "publicProfile": {
     "joined": "Joined",
@@ -433,7 +484,23 @@
     "verifiedTitle": "Verified documents",
     "backToUpnex": "Back to UPNEX",
     "loadFailed": "Couldn't load this profile.",
-    "serverTrouble": "UPNEX is having trouble reaching its servers. Check back in a moment."
+    "serverTrouble": "UPNEX is having trouble reaching its servers. Check back in a moment.",
+    "skills": "Skills",
+    "credentials": "Credentials",
+    "verifiedAccount": {
+      "_one": "Verified account",
+      "_other": "Verified account"
+    },
+    "shareProfile": "Share profile",
+    "featured": "Featured work",
+    "skillGraph": "Skill evidence map",
+    "academics": "Academic snapshot",
+    "average": "Average",
+    "cgpa": "CGPA / 10",
+    "trend": "Trend",
+    "strongAreas": "Strong areas",
+    "focusAreas": "Focus areas",
+    "education": "Education"
   },
   "notFound": {
     "nothing": "Nothing flowing here.",
@@ -460,5 +527,99 @@
     "translatedLabel": "Translated",
     "notTranslated": "View in {{language}}",
     "translationNote": "Translation is generated for display only. Your original document is never modified."
+  },
+  "proof": {
+    "issuedOn": "Verified on",
+    "verifiedByUpnex": "Verified by UPNEX",
+    "copied": "Copied!",
+    "copyLink": "Copy verify link",
+    "openPage": "Open verify page"
+  },
+  "admin": {
+    "staffOnlyTitle": "Staff area",
+    "staffOnlySub": "Document verification is only available to UPNEX reviewers.",
+    "backToDashboard": "Back to dashboard",
+    "kicker": "UPNEX REVIEW",
+    "title": "Document verification",
+    "subtitle": "Review pending uploads and issue verification IDs.",
+    "queueEmpty": "No documents waiting for review",
+    "queueEmptySub": "New uploads appear here automatically.",
+    "student": "Student",
+    "document": "Document",
+    "uploaded": "Uploaded",
+    "issuer": "Issuer",
+    "issuerPlaceholder": "Issuing body (optional)",
+    "approving": "Verifying…",
+    "approve": "Verify"
+  },
+  "export": {
+    "readiness": "Readiness",
+    "completion": "Profile completion",
+    "projects": "Projects",
+    "skills": "Skills",
+    "verifiedCredentials": "Verified credentials",
+    "w7": "7 days",
+    "w30": "30 days",
+    "w90": "90 days",
+    "wAll": "All time",
+    "aTotal": "Total activity",
+    "aViews": "Profile views",
+    "aProjectClicks": "Project clicks",
+    "aCredentialViews": "Credential checks",
+    "aShares": "Shares",
+    "aResumes": "Resume opens",
+    "back": "Back to profile",
+    "print": "Print / Save as PDF",
+    "generated": "Generated",
+    "student": "Student",
+    "careerSignal": "CAREER SIGNAL",
+    "match": "match",
+    "signalSub": "Strongest match based on academic marks and proof-of-work evidence.",
+    "noSignal": "Add marks and projects to unlock career guidance.",
+    "analytics": "PROFILE ACTIVITY",
+    "academics": "ACADEMICS",
+    "average": "Average",
+    "noMarks": "No academic marks recorded.",
+    "evidence": {
+      "_one": "{{count}} evidence",
+      "_other": "{{count}} evidence"
+    },
+    "noSkills": "No skills added yet.",
+    "education": "EDUCATION",
+    "noEducation": "No education added.",
+    "noProjects": "No projects published.",
+    "credentials": "VERIFIED CREDENTIALS",
+    "doc": "Document",
+    "issuer": "Issuer",
+    "date": "Date",
+    "verifyId": "Verification ID",
+    "noCredentials": "No verified credentials yet.",
+    "experience": "EXPERIENCE",
+    "current": "current",
+    "noExperience": "No experience recorded.",
+    "learnings": "LEARNING TRACK",
+    "noLearnings": "No learning track recorded.",
+    "achievements": "ACHIEVEMENTS",
+    "noAchievements": "No achievements recorded.",
+    "generatedBy": "Generated by UPNEX",
+    "privateByDefault": "Private by default — only content you publish is shared."
+  },
+  "skillBridge": {
+    "graphTitle": "YOUR SKILL EVIDENCE MAP",
+    "graphSub": "Your declared skills, linked to the projects, repos and credentials that prove them.",
+    "tipsEyebrow": "HOW TO GROW IT",
+    "tipsTitle": "Every lit edge is proof.",
+    "tipsBody": "Skills without linked evidence stay dark. Add a project, connect a GitHub repo, or verify a credential that mentions the skill to light that skill up.",
+    "autoHint": "UPNEX links evidence automatically when a project or credential mentions the skill."
+  },
+  "verify": {
+    "copied": "Copied",
+    "copyLink": "Copy verify link",
+    "open": "Open verify page",
+    "loadFailedSub": "UPNEX is having trouble reaching its servers. Please try again in a moment.",
+    "title": "Verified document",
+    "fingerprint": "File fingerprint",
+    "reviewedBy": "Verified by",
+    "issuedTo": "Issued to"
   }
 }
