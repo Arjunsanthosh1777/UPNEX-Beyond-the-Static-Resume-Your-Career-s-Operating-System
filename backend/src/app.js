@@ -21,6 +21,12 @@ import multer from "multer";
 
 const app = express();
 
+// Render (and other hosting) terminates TLS behind a proxy, so req.ip is the
+// proxy unless the proxy hop count is declared. Without this, express-rate-limit
+// keys EVERY user into one shared bucket and 429s the whole site once it fills.
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+
 // Comma-separated CORS_ORIGINS overrides the default; the frontend always
 // ships from localhost for local dev, and a hosted build reaches the API
 // cross-origin from whatever origin CLIENT_URL points at.
