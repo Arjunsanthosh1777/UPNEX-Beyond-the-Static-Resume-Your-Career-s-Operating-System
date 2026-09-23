@@ -508,7 +508,7 @@ export default function Clash() {
               ) : (
                 <p className="clash-pdf-note">{t("clash.pdfNoKey", "No answer key found — mark the correct answer for each question.")}</p>
               )}
-              {quizNotes?.truncated && <p className="clash-pdf-note">{t("clash.pdfTruncated", "Only the first 10 questions were used.")}</p>}
+              {quizNotes?.truncated && <p className="clash-pdf-note">{t("clash.pdfTruncated", "Only the first 20 questions were used.")}</p>}
             </div>
             <ol className="clash-pdf-qs">
               {quiz.map((q, qi) => (

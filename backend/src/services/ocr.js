@@ -23,9 +23,10 @@ export async function recognizeImage(buffer) {
 const DEFAULT_PSM = "3";
 
 // OCR page-segmentation modes to try for photos of printed pages. Mode 3 (auto)
-// suits normal text blocks, 6 (single block) fits dense question papers, and
-// 11 (sparse text) helps when the image has lots of whitespace or columns.
-const PHOTO_PSMS = ["3", "6", "11"];
+// suits normal text blocks, 4 (single column, variable sizes) fits list-style
+// question sheets, 6 (single block) denser papers, and 11 (sparse text) helps
+// when there is lots of whitespace or columns.
+const PHOTO_PSMS = ["3", "4", "6", "11"];
 
 // Runs OCR against an image buffer trying several page-segmentation modes and
 // keeps the longest output. Photos of exam questions vary wildly in layout, so

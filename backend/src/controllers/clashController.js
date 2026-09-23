@@ -314,7 +314,7 @@ export async function setGameQuestions(req, res) {
   res.json({ state: statePayload(refreshed, req.auth.id) });
 }
 
-const QUIZ_MAX_QUESTIONS = 10;
+const QUIZ_MAX_QUESTIONS = 20;
 
 export async function answerQuestion(req, res) {
   const userId = req.auth.id;

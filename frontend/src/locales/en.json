@@ -141,7 +141,7 @@
       "pdfReviewSub": "Mark the correct answer for each one — it decides who scores the points.",
       "pdfKeyFound": "Answer key detected — correct answers were pre-filled.",
       "pdfNoKey": "No answer key found — mark the correct answer for each question.",
-      "pdfTruncated": "Only the first 10 questions were used.",
+      "pdfTruncated": "Only the first 20 questions were used.",
       "pdfNeedMark": "need an answer",
       "pdfAllAnswered": "all answers marked",
       "pdfCancel": "Cancel",

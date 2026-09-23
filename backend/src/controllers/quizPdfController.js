@@ -1,6 +1,6 @@
 import { extractQuizText, parseMcq } from "../services/quizParser.js";
 
-const QUIZ_LIMIT = 10;
+const QUIZ_LIMIT = 20;
 
 // Accepts a PDF or image of a question paper, reads the text and returns the
 // parsed MCQ questions for the host to review. Answers are auto-filled only

@@ -104,4 +104,35 @@ describe("parseMcq", () => {
     expect(questions).toHaveLength(1);
     expect(questions[0].options[3]).toBe("lion read the list slowly");
   });
+
+  it("parses sheets using Q. / Q1) / Question N: numbering into distinct questions", () => {
+    const { questions } = parseMcq(
+      [
+        "Q.1 Capital of India?",
+        "(A) Delhi",
+        "(B) Mumbai",
+        "(C) Chennai",
+        "Q2) Longest river?",
+        "(A) Ganga",
+        "(B) Godavari",
+        "Question 3: Which planet is red?",
+        "(A) Mars",
+        "(B) Venus"
+      ].join("\n")
+    );
+    expect(questions).toHaveLength(3);
+    expect(questions[0].prompt).toBe("Capital of India?");
+    expect(questions[0].options).toEqual(["Delhi", "Mumbai", "Chennai"]);
+    expect(questions[1].prompt).toBe("Longest river?");
+    expect(questions[1].options).toEqual(["Ganga", "Godavari"]);
+    expect(questions[2].prompt).toBe("Which planet is red?");
+    expect(questions[2].options).toEqual(["Mars", "Venus"]);
+  });
+
+  it("handles a Q-prefixed prose line without crashing, taking its options", () => {
+    const { questions } = parseMcq("Q. 5 items were missing from the box\nA) grenade launcher grade\nB) rotated 90 deg");
+    expect(questions).toHaveLength(1);
+    expect(questions[0].prompt).toBe("items were missing from the box");
+    expect(questions[0].options).toEqual(["grenade launcher grade", "rotated 90 deg"]);
+  });
 });

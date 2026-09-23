@@ -89,7 +89,16 @@ function parseAnswerKey(text) {
   return entries;
 }
 
-const MAX_QUESTIONS = 12;
+// Sheets number questions several ways — "Q.1", "Q1)", "Q.No. 2", "Question 3:"
+// — but the token stream only understands plain "1." / "1)". Normalise the lead
+// of the line so those common paper styles land as plain "N." / "N)" markers.
+function normalizeQuestionTag(line) {
+  const worded = line.replace(/^\s*[Qq]uestion\s+(\d{1,4})\s*[.:)]\s*/, (_, num) => `${num}. `);
+  if (worded !== line) return worded;
+  return line.replace(/^\s*[Qq]\s*[.:)\-]?\s*(?:No\.?\s*)?(\d{1,4})(\s*[.)])?\s*/, (_, num, sep) => `${num}${sep ? sep.trim() : "."} `);
+}
+
+const MAX_QUESTIONS = 25;
 const MAX_OPTIONS = 4;
 
 // Splits a single OCR/PDF line into marker tokens whose payloads overlap the
@@ -179,7 +188,7 @@ function beginsFreshPrompt(body, fromLine, text) {
 // these). Unnumbered prompts are kept. An explicit answer key is honoured when
 // present, otherwise answers are left -1 for the host to confirm.
 export function parseMcq(text, { category } = {}) {
-  const rawLines = String(text || "").split(/\r?\n/).map((line) => line.trim());
+  const rawLines = String(text || "").split(/\r?\n/).map((line) => normalizeQuestionTag(line.trim()));
   const answerKey = parseAnswerKey(text);
   const categorySniff = sniffCategory(text) || category || null;
   const questions = [];
