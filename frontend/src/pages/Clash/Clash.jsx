@@ -296,6 +296,9 @@ export default function Clash() {
 
   // -------- arena screens --------
   const phase = game?.status === "waiting" ? "lobby" : game?.status === "active" ? "duel" : game?.status === "finished" ? "results" : "home";
+  const amHost = game?.host?.id === user?.id;
+  const opponent = amHost ? game?.guest : game?.host;
+  const opponentLabel = amHost ? t("clash.guest", "Guest") : t("clash.host", "Host");
 
   return (
     <div className="clash-shell">
@@ -363,7 +366,7 @@ export default function Clash() {
           <div className="clash-lobby-top">
             <div>
               <span className="clash-kicker">ROOM {game.code}</span>
-              <h2>{game.guest ? t("clash.friendReady", "Your rival is here!") : t("clash.waitingFriend", "Waiting for your friend…")}</h2>
+              <h2>{amHost ? (game.guest ? t("clash.friendReady", "Your rival is here!") : t("clash.waitingFriend", "Waiting for your friend…")) : t("clash.joinedWaiting", "You're in — waiting for the host to start.")}</h2>
               <p>{t("clash.inviteHint", "Share this link — they open it, sign in, and land straight in your arena.")}</p>
               <button type="button" className="clash-copy" onClick={copyInvite}>
                 {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -373,13 +376,13 @@ export default function Clash() {
             <div className="clash-versus">
               <div className="clash-fighter"><Initials name={user?.name} side="gold" /><b>{user?.name}</b><small>{t("clash.you", "You")}</small></div>
               <span className="clash-vs">VS</span>
-              <div className="clash-fighter"><Initials name={game.guest?.name} /><b>{game.guest?.name || "…"}</b><small>{t("clash.guest", "Guest")}</small></div>
+              <div className="clash-fighter"><Initials name={opponent?.name} /><b>{opponent?.name || "…"}</b><small>{opponentLabel}</small></div>
             </div>
           </div>
-          {game.guest ? (
+          {amHost && game.guest ? (
             <button type="button" className="clash-start" onClick={startArena}><Play size={17} /> {t("clash.startNow", "Start the clash")}</button>
           ) : (
-            <p className="clash-waiting">{t("clash.waitingText", "Ping your friend on WhatsApp — the arena starts the moment they join.")}</p>
+            <p className="clash-waiting">{amHost ? t("clash.waitingText", "Ping your friend on WhatsApp — the arena starts the moment they join.") : t("clash.waitHost", "Waiting for the host to start the clash…")}</p>
           )}
           {game.host?.id === user?.id && (
             <div className="clash-pdf-zone">
