@@ -57,6 +57,16 @@ export function usernameBase(name, email) {
 }
 
 /**
+ * Always returns a usable base. "user<random>" is the fallback for names and
+ * emails that produce no slug (emoji-only names, tiny local-parts, non-Latin
+ * text) so such accounts still get a real public /username profile instead of
+ * being stuck without one forever.
+ */
+export function ensureBase(name, email, prefix = "user") {
+  return usernameBase(name, email) || `${prefix}${Math.floor(Math.random() * 90000) + 10000}`;
+}
+
+/**
  * Returns the first available username for `base` by appending a numeric
  * suffix on collision ("riya-sharma", "riya-sharma1", ...). Reserved words are
  * also treated as taken.
@@ -81,8 +91,7 @@ export async function nextAvailableUsername(prisma, base, reserved = RESERVED_US
 
 /** Assigns (and persists) a username for a user that doesn't have one yet. */
 export async function assignUsername(prisma, userId, name, email) {
-  const base = usernameBase(name, email);
-  if (!base) return null;
+  const base = ensureBase(name, email);
   const username = await nextAvailableUsername(prisma, base);
   if (!username) return null;
   return prisma.user.update({

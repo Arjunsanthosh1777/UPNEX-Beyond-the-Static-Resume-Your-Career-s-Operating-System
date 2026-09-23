@@ -81,7 +81,13 @@ async function verifyMeta(rawId) {
 }
 
 function renderOg(meta, req) {
-  const base = `http://${req.headers.host}`;
+  // Behind a TLS-terminating proxy (Render), req.protocol/req.headers.host can
+  // lie; x-forwarded-* is where the real scheme/host lives.
+  const proto = req.headers["x-forwarded-proto"] && String(req.headers["x-forwarded-proto"]).split(",")[0].trim()
+    ? String(req.headers["x-forwarded-proto"]).split(",")[0].trim()
+    : req.secure ? "https" : "http";
+  const host = typeof req.headers["x-forwarded-host"] === "string" ? req.headers["x-forwarded-host"] : req.headers.host;
+  const base = `${proto}://${host}`;
   const imageUrl = `${base}/og/og-default.png`;
   const url = `${base}${req.originalUrl}`;
   const title = escapeHtml(meta.title);

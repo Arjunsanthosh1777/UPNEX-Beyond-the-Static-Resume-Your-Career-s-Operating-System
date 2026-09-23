@@ -4,6 +4,7 @@ import { verifyAccessToken } from "../utils/signedUrl.js";
 import { verifyToken } from "../utils/jwt.js";
 import { friendlyDownloadName } from "../utils/files.js";
 import { mediaStorageRoot, openFile } from "../services/objectStore.js";
+import { isPublic } from "./publicController.js";
 
 function contentDisposition(action, filename) {
   const ascii = filename.replace(/[^\x20-\x7E]/g, "_").replace(/"/g, "'");
@@ -94,7 +95,9 @@ export async function streamMedia(req, res) {
       isOwner = false;
     }
   }
-  if (!isOwner && owner.privacy?.profile !== "public") {
+  // Mirrors the public profile logic: a null/missing privacy dict means the
+  // profile defaults to public, so anonymous visitors may fetch the media.
+  if (!isOwner && !isPublic(owner.privacy, "profile")) {
     return res.status(403).json({ message: "This profile is private." });
   }
 

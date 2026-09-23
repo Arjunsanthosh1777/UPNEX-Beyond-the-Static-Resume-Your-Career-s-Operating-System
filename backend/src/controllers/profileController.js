@@ -373,6 +373,9 @@ export async function getProfile(req, res) {
     + Math.min(studyBadges * 2, 8)
   ));
   const ctx = { documents, projects, experiences };
+  // A deleted user's still-valid token sails through requireAuth; without this
+  // guard the *buildX* helpers below would crash on user === null.
+  if (!user) return res.status(404).json({ message: "Profile not found." });
   res.json({
     user,
     documents: documents.map(serializeDocument),
@@ -395,11 +398,11 @@ export async function updateProfile(req, res) {
 
   // Only touch keys the caller actually sent: the portfolio identity form posts
   // name/links only, and must not blank out headline/privacy/education.
-  const update = {
-    name: data.name,
-    githubUrl: data.githubUrl || null,
-    linkedinUrl: data.linkedinUrl || null
-  };
+  const update = { name: data.name };
+  // The social links follow the same !==-undefined rule — a rename-only PATCH
+  // must never null them out.
+  if (data.githubUrl !== undefined) update.githubUrl = data.githubUrl || null;
+  if (data.linkedinUrl !== undefined) update.linkedinUrl = data.linkedinUrl || null;
   if (data.preferredLanguage !== undefined) update.preferredLanguage = data.preferredLanguage;
   if (data.headline !== undefined) update.headline = data.headline || null;
   if (data.location !== undefined) update.location = data.location || null;
@@ -804,12 +807,16 @@ export async function removeCover(req, res) {
 
 export async function addExperience(req, res) {
   const data = experienceSchema.parse(req.body);
-  const maxOrder = await prisma.profileExperience.aggregate({
-    where: { userId: req.auth.id },
-    _max: { sortOrder: true }
-  });
-  const experience = await prisma.profileExperience.create({
-    data: { ...data, sortOrder: data.sortOrder ?? (maxOrder._max.sortOrder ?? -1) + 1, userId: req.auth.id }
+  // Read-then-write in one transaction so two quick adds can't both pick the
+  // same sortOrder (the UI orders by it).
+  const experience = await prisma.$transaction(async (tx) => {
+    const maxOrder = await tx.profileExperience.aggregate({
+      where: { userId: req.auth.id },
+      _max: { sortOrder: true }
+    });
+    return tx.profileExperience.create({
+      data: { ...data, sortOrder: data.sortOrder ?? (maxOrder._max.sortOrder ?? -1) + 1, userId: req.auth.id }
+    });
   });
   res.status(201).json({ experience });
 }

@@ -67,12 +67,20 @@ const DEMO_GOALS = [
 
 const DEMO_HEADLINE = "Final-year CS student building verified career records on UPNEX.";
 
+// Process-local guard: double-fired React effects (StrictMode, double-click)
+// can race the check-then-write below and each end up creating the demo rows.
+const demoLocks = new Set();
+
 // Seeds a believable student profile (marks, projects, experience, education,
 // learnings, achievements and study goals) so a fresh, otherwise-empty account
 // can be explored end-to-end in a demo. Safe to repeat: refuses to run once the
 // account already has marks or projects.
 export async function loadDemoData(req, res) {
   const userId = req.auth.id;
+  if (demoLocks.has(userId)) {
+    return res.status(409).json({ message: "Demo data is already loading for this account.", loaded: false });
+  }
+  demoLocks.add(userId);
   try {
     const [markCount, projectCount] = await Promise.all([
       prisma.academicMark.count({ where: { userId } }),
@@ -120,5 +128,7 @@ export async function loadDemoData(req, res) {
   } catch (error) {
     console.error("loadDemoData failed:", error);
     res.status(500).json({ message: "Could not load sample data." });
+  } finally {
+    demoLocks.delete(userId);
   }
 }

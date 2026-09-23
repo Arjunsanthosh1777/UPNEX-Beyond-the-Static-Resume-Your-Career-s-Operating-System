@@ -675,12 +675,20 @@
     "privateByDefault": "Private by default — only content you publish is shared."
   },
   "skillBridge": {
+    "kicker": "06 / SKILL BRIDGE",
+    "titleLine": "Turn your resume into a living graph.",
+    "subtitle": "Skills you prove stay lit — linked to the projects, repos and verified credentials behind them.",
     "graphTitle": "YOUR SKILL EVIDENCE MAP",
     "graphSub": "Your declared skills, linked to the projects, repos and credentials that prove them.",
     "tipsEyebrow": "HOW TO GROW IT",
     "tipsTitle": "Every lit edge is proof.",
     "tipsBody": "Skills without linked evidence stay dark. Add a project, connect a GitHub repo, or verify a credential that mentions the skill to light that skill up.",
     "autoHint": "UPNEX links evidence automatically when a project or credential mentions the skill."
+  },
+  "passport": {
+    "kicker": "07 / CAREER PASSPORT",
+    "titleLine": "One portable career record.",
+    "subtitle": "Your verified identity, skills, credentials and achievements travel with you."
   },
   "verify": {
     "copied": "Copied",

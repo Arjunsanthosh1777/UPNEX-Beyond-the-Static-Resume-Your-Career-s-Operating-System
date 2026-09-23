@@ -278,8 +278,13 @@ export async function getPlanner(req, res) {
 
   if (!row) {
     const built = buildPlan(marks, enrollments, goals);
-    row = await prisma.studyPlan.create({
-      data: { userId: req.auth.id, weekStart, plan: built.days, done: {} }
+    // Upsert instead of create: two requests for the same fresh week (double
+    // React effect, second tab) both miss the lookup, and create() would blow
+    // up on the unique (userId, weekStart) pair.
+    row = await prisma.studyPlan.upsert({
+      where: { userId_weekStart: { userId: req.auth.id, weekStart } },
+      update: {},
+      create: { userId: req.auth.id, weekStart, plan: built.days, done: {} }
     });
     await announceNewWeek(req.auth.id, built).catch(() => {});
   }

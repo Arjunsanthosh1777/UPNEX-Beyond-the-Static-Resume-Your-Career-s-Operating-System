@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "../config/database.js";
 import { verifyFirebaseIdToken } from "../config/firebaseAdmin.js";
 import { signToken } from "../utils/jwt.js";
-import { assignUsername, nextAvailableUsername, usernameBase } from "../utils/username.js";
+import { assignUsername, ensureBase, nextAvailableUsername } from "../utils/username.js";
 import { sendLoginAlert, sendWelcome } from "../services/alerts.js";
 
 const authSchema = z.object({
@@ -22,6 +22,12 @@ const cookieOptions = {
   sameSite: process.env.COOKIE_SAMESITE || "lax",
   secure: process.env.COOKIE_SECURE === "true" ? true : process.env.COOKIE_SECURE === "false" ? false : process.env.NODE_ENV === "production",
   maxAge: 7 * 24 * 60 * 60 * 1000
+};
+
+// Short-lived state cookie for the OAuth round-trip (login CSRF protection).
+const oauthStateOptions = {
+  ...cookieOptions,
+  maxAge: 10 * 60 * 1000
 };
 
 function googleClient() {
@@ -53,16 +59,24 @@ export async function register(req, res) {
   if (exists) return res.status(409).json({ message: "Email already registered." });
 
   const passwordHash = await bcrypt.hash(data.password, 12);
-  const username = await nextAvailableUsername(prisma, usernameBase(data.name, data.email));
-  const user = await prisma.user.create({
-    data: {
-      name: data.name || "UPNEX Learner",
-      email: data.email,
-      passwordHash,
-      username
-    },
-    select: { id: true, name: true, email: true, username: true, role: true, emailPrefs: true }
-  });
+  const username = await nextAvailableUsername(prisma, ensureBase(data.name, data.email));
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: {
+        name: data.name || "UPNEX Learner",
+        email: data.email,
+        passwordHash,
+        username
+      },
+      select: { id: true, name: true, email: true, username: true, role: true, emailPrefs: true }
+    });
+  } catch (error) {
+    // Covers the two-registration race on the same email/username. Prisma does
+    // not expose which unique column tripped, and the UX message is the same.
+    if (error.code === "P2002") return res.status(409).json({ message: "Email already registered." });
+    throw error;
+  }
 
   res.cookie("upnex_token", signToken(user), cookieOptions);
   sendWelcome({ user }).catch(() => {});
@@ -96,10 +110,13 @@ export function googleLogin(req, res) {
   }
 
   const client = googleClient();
+  const state = randomUUID();
+  res.cookie("oauth_state", state, oauthStateOptions);
   const authorizationUrl = client.generateAuthUrl({
     access_type: "offline",
     scope: ["openid", "email", "profile"],
-    prompt: "select_account"
+    prompt: "select_account",
+    state
   });
   res.redirect(authorizationUrl);
 }
@@ -108,6 +125,14 @@ export async function googleCallback(req, res) {
   const clientUrl = process.env.CLIENT_URL || (process.env.NODE_ENV === "production" ? process.env.RENDER_EXTERNAL_URL : undefined) || "http://localhost:5173";
   if (!googleIsConfigured()) return res.redirect(`${clientUrl}/login?error=google_not_configured`);
   if (!req.query.code) return res.redirect(`${clientUrl}/login?error=google_cancelled`);
+
+  // Login-CSRF guard: the code must belong to a flow this browser started.
+  const state = String(req.query.state || "");
+  const expectedState = String(req.cookies?.oauth_state || "");
+  res.clearCookie("oauth_state", oauthStateOptions);
+  if (!state || !expectedState || state !== expectedState) {
+    return res.redirect(`${clientUrl}/login?error=google_cancelled`);
+  }
 
   try {
     const client = googleClient();
@@ -168,7 +193,7 @@ export async function firebaseLogin(req, res) {
     },
     create: {
       name: decoded.name || "UPNEX Learner",
-      username: await nextAvailableUsername(prisma, usernameBase(decoded.name, decoded.email)),
+      username: await nextAvailableUsername(prisma, ensureBase(decoded.name, decoded.email)),
       email: decoded.email,
       avatar: decoded.picture || undefined,
       // Firebase accounts may never set a password. Store an unusable random

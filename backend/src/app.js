@@ -47,7 +47,15 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300 }));
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 1200,
+  // Clash polling hits GET /api/clash/games/:id roughly every second while a
+  // match runs; those reads are cheap and bound to an active game, so they do
+  // not count toward the bucket (a completed 5-question duel alone would
+  // otherwise burn the whole 15-minute allowance).
+  skip: (req) => req.method === "GET" && req.path.startsWith("/api/clash")
+}));
 
 // Credential and sign-in probes get a much tighter window than general
 // traffic. GETs (session restore via /me) stay unlimited so browsing around
@@ -105,7 +113,12 @@ app.use((err, req, res, next) => {
   }
 
   console.error(err);
-  res.status(err.status || 500).json({ message: err.message || "Server error." });
+  // Only 4xx payloads may carry the internal message; a crash should never
+  // leak Prisma/SQLite internals (or a real stack) to the client.
+  if (err.status && err.status < 500) {
+    return res.status(err.status).json({ message: err.message || "Request failed." });
+  }
+  res.status(500).json({ message: process.env.NODE_ENV === "production" ? "Server error." : err.message || "Server error." });
 });
 
 export default app;

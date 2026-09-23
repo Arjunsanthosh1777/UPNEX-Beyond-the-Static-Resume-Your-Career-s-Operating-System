@@ -75,6 +75,8 @@ export async function getVerifyInfo(req, res) {
   if (!document) {
     const candidates = await prisma.vaultDocument.findMany({
       where: { verified: true },
+      orderBy: { createdAt: "desc" },
+      take: 500,
       select: {
         id: true,
         fileName: true,

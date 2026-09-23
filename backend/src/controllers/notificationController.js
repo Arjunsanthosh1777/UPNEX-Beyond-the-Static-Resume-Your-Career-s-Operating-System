@@ -1,7 +1,10 @@
 import { prisma } from "../config/database.js";
 
 export async function listNotifications(req, res) {
-  const limit = Math.min(Number(req.query.limit) || 30, 100);
+  // Clamp aggressively: fractional/negative limits must not reach Prisma's
+  // `take` (it rejects them and turns a tiny bad query into a 500).
+  const parsed = Number.parseInt(req.query.limit, 10);
+  const limit = Number.isNaN(parsed) ? 30 : Math.min(Math.max(parsed, 1), 100);
   const notifications = await prisma.notification.findMany({
     where: { userId: req.auth.id },
     orderBy: { createdAt: "desc" },

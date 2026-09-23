@@ -112,9 +112,11 @@ async function loadGame(gameId, userId) {
 
 export { statePayload, loadGame };
 // Advance the duel: once both players have answered (or the timer ran out) move
-// to the next question, and finish the game when the set is exhausted. Run
-// inside a transaction; the unique (game, user, qIndex) index makes competing
-// calls from both browsers safe.
+// to the next question, and finish the game when the set is exhausted. Runs
+// inside a transaction. Competing calls from both browsers (and poll nudges)
+// are safe: answer rows are inserted with skipDuplicates and the terminal/next
+// transitions are guarded by conditional updateMany, so only one caller ever
+// awards the points and nobody advances past the same question twice.
 async function resolveGame(gameId) {
   await prisma.$transaction(async (tx) => {
     const game = await tx.clashGame.findUnique({ where: { id: gameId } });
@@ -127,26 +129,30 @@ async function resolveGame(gameId) {
 
     if (!(hostAnswered && guestAnswered) && !deadlinePassed) return;
 
+    const placeholders = [];
     for (const side of ["host", "guest"]) {
       const userId = side === "host" ? game.hostId : game.guestId;
       if (!userId) continue;
-      const answered = answers.some((a) => a.userId === userId);
-      if (!answered) {
-        await tx.clashAnswer.create({
-          data: { gameId, userId, qIndex: game.qIndex, answerIndex: -1, correct: false, timeLeft: 0, points: 0 }
-        });
+      if (!answers.some((a) => a.userId === userId)) {
+        placeholders.push({ gameId, userId, qIndex: game.qIndex, answerIndex: -1, correct: false, timeLeft: 0, points: 0 });
       }
+    }
+    if (placeholders.length > 0) {
+      await tx.clashAnswer.createMany({ data: placeholders, skipDuplicates: true });
     }
 
     const isLast = game.qIndex + 1 >= game.questionOrder.length;
     if (isLast) {
       const winnerId = game.scoreHost === game.scoreGuest ? null : game.scoreHost > game.scoreGuest ? game.hostId : game.guestId;
-      await tx.clashGame.update({ where: { id: gameId }, data: { status: "finished", winnerId, finishedAt: new Date() } });
-      await awardClashGame(tx, gameId, game, winnerId);
+      const updated = await tx.clashGame.updateMany({
+        where: { id: gameId, status: "active" },
+        data: { status: "finished", winnerId, finishedAt: new Date() }
+      });
+      if (updated.count === 1) await awardClashGame(tx, gameId, game, winnerId);
       return;
     }
-    await tx.clashGame.update({
-      where: { id: gameId },
+    await tx.clashGame.updateMany({
+      where: { id: gameId, status: "active", qIndex: game.qIndex },
       data: { qIndex: game.qIndex + 1, qDeadline: new Date(Date.now() + QUESTION_TIME_MS) }
     });
   });
@@ -213,15 +219,23 @@ export async function joinGame(req, res) {
   if (!game) return res.status(404).json({ message: "No arena found with that code. Check with your friend." });
   if (game.hostId === userId) return res.status(400).json({ message: "That's your own arena. Invite a friend instead." });
   if (game.status === "active" || game.status === "finished") return res.status(409).json({ message: "That arena has already started." });
-  if (game.guestId && game.guestId !== userId) return res.status(409).json({ message: "This arena is full." });
+  if (game.guestId === userId) return res.json({ id: game.id });
+  if (game.guestId) return res.status(409).json({ message: "This arena is full." });
 
-  await prisma.clashGame.update({ where: { id: game.id }, data: { guestId: userId } });
+  // Conditional write so two guests joining at once cannot both take the seat:
+  // the second one gets a 409 instead of silently displacing the first.
+  const updated = await prisma.clashGame.updateMany({
+    where: { id: game.id, status: "waiting", guestId: null },
+    data: { guestId: userId }
+  });
+  if (updated.count !== 1) return res.status(409).json({ message: "This arena just filled up." });
   res.json({ id: game.id });
 }
 
 export async function getGame(req, res) {
   const game = await loadGame(req.params.id, req.auth.id);
   if (!game) return res.status(404).json({ message: "Arena not found." });
+  if (!sideOf(game, req.auth.id)) return res.status(403).json({ message: "You are not part of this arena." });
 
   if (game.status === "active") {
     try {
@@ -321,8 +335,15 @@ export async function answerQuestion(req, res) {
     return res.status(400).json({ message: "Pick a valid option." });
   }
 
-  const rawTimeLeft = Math.max(0, Math.floor(Number(req.body?.timeLeft) || 0));
-  const timeLeft = Math.min(QUESTION_TIME_MS / 1000, rawTimeLeft);
+  // The 20s question deadline is the source of truth, not the client clock —
+  // a modified client must not be able to farm the speed bonus or to answer a
+  // question that already ended.
+  const nowMs = Date.now();
+  const deadlineMs = game.qDeadline ? new Date(game.qDeadline).getTime() : nowMs;
+  if (nowMs > deadlineMs) {
+    return res.status(409).json({ message: "Time's up — the next question is on its way." });
+  }
+  const timeLeft = Math.min(QUESTION_TIME_MS / 1000, Math.max(0, Math.floor((deadlineMs - nowMs) / 1000)));
   const correct = order[qIndex].answer === answerIndex;
   const points = correct ? POINTS_CORRECT + (timeLeft >= 10 ? POINTS_TIME_BONUS : 0) : 0;
 
@@ -371,7 +392,25 @@ export async function abandonGame(req, res) {
   const userId = req.auth.id;
   const game = await prisma.clashGame.findUnique({ where: { id: req.params.id } });
   if (!game || (game.hostId !== userId && game.guestId !== userId)) return res.status(404).json({ message: "Arena not found." });
-  if (game.status !== "waiting" && game.status !== "active") return res.status(409).json({ message: "Arena already finished." });
-  await prisma.clashGame.update({ where: { id: game.id }, data: { status: "abandoned", finishedAt: new Date() } });
+  if (game.status === "finished" || game.status === "abandoned") return res.status(409).json({ message: "Arena already finished." });
+
+  if (game.status === "waiting") {
+    await prisma.clashGame.updateMany({
+      where: { id: game.id, status: "waiting" },
+      data: { status: "abandoned", finishedAt: new Date() }
+    });
+    return res.json({ ok: true });
+  }
+
+  // Active game: bailing is a forfeit — the opponent takes the win and the
+  // points are awarded exactly once (guarded by the conditional transition).
+  const opponentId = game.guestId && game.guestId !== userId ? game.guestId : game.hostId;
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.clashGame.updateMany({
+      where: { id: game.id, status: "active" },
+      data: { status: "finished", winnerId: opponentId, finishedAt: new Date() }
+    });
+    if (updated.count === 1) await awardClashGame(tx, game.id, game, opponentId);
+  });
   res.json({ ok: true });
 }

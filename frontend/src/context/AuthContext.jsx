@@ -63,10 +63,15 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     if (firebaseIsConfigured()) {
       const credential = await signInWithEmailAndPassword(auth, email, password);
-      await syncSessionWithBackend(credential.user);
-    } else {
-      await api.post("/auth/login", { email, password });
+      const synced = await syncSessionWithBackend(credential.user);
+      localStorage.removeItem("upnex_guest");
+      setAuthError(null);
+      // Same shape register() uses: prefer the backend user when the session
+      // synced, otherwise the client-side Firebase user still lets the UI in.
+      setUser(synced);
+      return;
     }
+    await api.post("/auth/login", { email, password });
     localStorage.removeItem("upnex_guest");
     setAuthError(null);
     const refreshed = await api.get("/auth/me").catch(() => null);
