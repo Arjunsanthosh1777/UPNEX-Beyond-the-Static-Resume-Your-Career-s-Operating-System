@@ -274,7 +274,7 @@ export default function Clash() {
   if (requireSignIn) {
     return (
       <div className="clash-shell">
-<ClashHeader user={user} onLeave={phase === "lobby" || phase === "duel" ? leaveToLobby : undefined} />
+<ClashHeader user={user} />
         <section className="clash-signin">
           <Swords size={40} />
           <h2>{t("clash.signinTitle", "Challenge a friend. Climb the arena.")}</h2>
@@ -299,7 +299,7 @@ export default function Clash() {
 
   return (
     <div className="clash-shell">
-      <ClashHeader user={user} />
+      <ClashHeader user={user} onLeave={phase === "lobby" || phase === "duel" ? leaveToLobby : undefined} />
       {flash && <div className="clash-flash"><button type="button" onClick={() => setFlash("")} aria-label="dismiss">×</button>{flash}</div>}
 
       {phase === "home" && (
