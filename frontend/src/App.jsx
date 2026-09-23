@@ -21,7 +21,7 @@ const Clash = lazy(() => import("./pages/Clash/Clash"));
 // in the address bar can never shadow a real page. The backend enforces the
 // same guarantee with its own reserved list before any DB lookup.
 
-const PROFILE_VIEWS = ["vault", "analysis", "study", "careers", "portfolio", "skill-bridge", "passport", "export", "settings"];
+const PROFILE_VIEWS = ["vault", "analysis", "study", "careers", "portfolio", "skill-bridge", "engine", "passport", "export", "settings"];
 
 function Protected({ children }) {
   return <ProtectedRoute>{children}</ProtectedRoute>;

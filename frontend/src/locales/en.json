@@ -51,6 +51,7 @@
     "vault": "Digital Vault",
     "analysis": "Subject Analysis",
     "studyCoach": "Smart Study",
+    "engine": "The Engine",
     "careers": "Career Guidance",
     "portfolio": "Live Portfolio",
     "settings": "Settings",
@@ -414,6 +415,11 @@
     "deleteMark": "Delete mark",
     "markRemoved": "Mark removed.",
     "markRemoveFailed": "Could not remove that mark."
+  },
+  "engine": {
+    "kicker": "THE STUDENT ENGINE",
+    "titleLine": "An engine that reads how you learn.",
+    "subtitle": "Every answer you lock in an arena and every mark you track becomes part of a live model of how you actually perform."
   },
   "studyCoach": {
     "kicker": "03 / SMART STUDY",
