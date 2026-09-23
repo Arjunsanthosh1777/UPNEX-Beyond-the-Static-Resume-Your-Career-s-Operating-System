@@ -152,6 +152,27 @@ function numericRunAhead(body, fromLine) {
   return false;
 }
 
+// True when the very next non-empty line starts with an option marker — i.e.
+// the current line is a standalone question prompt waiting for its options.
+function optionLeadAhead(body, fromLine) {
+  const to = Math.min(body.length, fromLine + 3);
+  for (let j = fromLine + 1; j < to; j += 1) {
+    const line = body[j];
+    if (!line) continue;
+    const first = lineTokens(line)[0];
+    return Boolean(first && (first.kind === "o" || (first.kind === "q" && first.sep === ")")));
+  }
+  return false;
+}
+
+// True when a bare-prose line after finished options reads like the start of a
+// new question: it ends in "?" or is followed by its own option run. Without
+// this, consecutive unnumbered questions (photo worksheets) merge into the
+// previous question's last option and the paper collapses to a single item.
+function beginsFreshPrompt(body, fromLine, text) {
+  return /[?]\s*$/.test(text) || optionLeadAhead(body, fromLine);
+}
+
 // Heuristic MCQ block parser over a token stream. Question numbers open
 // questions; lettered and "1) 2)…" numbered runs become options whether they
 // sit on their own lines or share a line with the prompt (photo OCR collapses
@@ -222,6 +243,7 @@ export function parseMcq(text, { category } = {}) {
       if (token.kind === "t") {
         if (!current) newQuestion(null, token.text);
         else if (current.options.length === 0) current.prompt = `${current.prompt} ${token.text}`.replace(/\s+/g, " ").trim();
+        else if (beginsFreshPrompt(body, li, token.text)) newQuestion(null, token.text);
         else {
           const last = current.options[current.options.length - 1];
           if (last) current.options[current.options.length - 1] = `${last} ${token.text}`.replace(/\s+/g, " ");

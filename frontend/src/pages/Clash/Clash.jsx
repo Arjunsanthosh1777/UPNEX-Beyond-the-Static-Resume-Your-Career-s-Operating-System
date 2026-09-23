@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Check, Copy, Crown, FileUp, Play, RotateCcw, Swords, Timer, Trash2, Trophy, Zap } from "lucide-react";
+import { Check, Copy, Crown, FileUp, Play, RotateCcw, Swords, Timer, Trash2, Trophy, X, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -350,6 +350,9 @@ export default function Clash() {
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 {copied ? t("clash.copied", "Copied!") : `${window.location.origin}/clash?code=${game.code}`}
               </button>
+              <button type="button" className="clash-link-btn" onClick={reset}>
+                <X size={13} /> {t("clash.leaveLobby", "Leave the lobby")}
+              </button>
             </div>
             <div className="clash-versus">
               <div className="clash-fighter"><Initials name={user?.name} side="gold" /><b>{user?.name}</b><small>{t("clash.you", "You")}</small></div>
@@ -472,8 +475,8 @@ export default function Clash() {
             })}
           </div>
           <div className="clash-result-actions">
-            <button type="button" className="clash-primary" onClick={createArena}><RotateCcw size={16} /> {t("clash.playAgain", "Play again")}</button>
-            <button type="button" className="clash-secondary" onClick={reset}>{t("clash.backArena", "Back to arena")}</button>
+            <button type="button" className="clash-primary" onClick={reset}><RotateCcw size={16} /> {t("clash.backArena", "Back to the arena lobby")}</button>
+            <button type="button" className="clash-secondary" onClick={createArena}><Swords size={15} /> {t("clash.playAgain", "Play again")}</button>
           </div>
         </section>
       )}

@@ -85,4 +85,23 @@ describe("parseMcq", () => {
     const { questions } = parseMcq("This is just prose with no options to speak of at all");
     expect(questions).toHaveLength(0);
   });
+
+  it("splits consecutive unnumbered questions each with their own option block", () => {
+    const { questions } = parseMcq(
+      ["Which of these is a prime number?", "(A) 15", "(B) 17", "(C) 21", "(D) 23", "Which is the longest river?", "(A) Ganga", "(B) Yamuna", "(C) Godavari", "(D) Narmada"].join("\n")
+    );
+    expect(questions).toHaveLength(2);
+    expect(questions[0].prompt).toBe("Which of these is a prime number?");
+    expect(questions[0].options).toEqual(["15", "17", "21", "23"]);
+    expect(questions[1].prompt).toBe("Which is the longest river?");
+    expect(questions[1].options).toEqual(["Ganga", "Yamuna", "Godavari", "Narmada"]);
+  });
+
+  it("leaves genuine option-last-line continuation text appended (not a new question)", () => {
+    const { questions } = parseMcq(
+      ["1. Pick the odd one out", "A) cat", "B) dog", "C) house", "D) lion", "read the list slowly"].join("\n")
+    );
+    expect(questions).toHaveLength(1);
+    expect(questions[0].options[3]).toBe("lion read the list slowly");
+  });
 });
