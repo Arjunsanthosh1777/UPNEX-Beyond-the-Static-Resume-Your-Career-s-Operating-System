@@ -419,6 +419,8 @@
 [data-theme="light"] .clash-name, [data-theme="light"] .clash-fighter b, [data-theme="light"] .clash-score-name,
 [data-theme="light"] .clash-how b, [data-theme="light"] .clash-review h3, [data-theme="light"] .clash-round-body b,
 [data-theme="light"] .clash-round-score, [data-theme="light"] .clash-rankings li.me { color: #1f2233; }
+[data-theme="light"] .clash-leave { color: #b33946; background: rgba(255, 82, 96, 0.06); border-color: rgba(255, 82, 96, 0.38); }
+[data-theme="light"] .clash-leave:hover { background: rgba(255, 82, 96, 0.12); color: #9c2733; }
 [data-theme="light"] .clash-rankings li.me { background: rgba(124, 77, 255, 0.1); border-color: rgba(124, 77, 255, 0.4); }
 [data-theme="light"] .clash-option { background: #fff; border-color: #ded6ef; color: #33385a; }
 [data-theme="light"] .clash-option:not(:disabled):hover { background: #f3eefe; border-color: #a98bff; }
@@ -483,6 +485,27 @@
   cursor: pointer;
   font-size: 12.5px;
   text-decoration: underline;
+}
+.clash-leave {
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.38);
+  color: #ff9e9e;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.clash-leave:hover {
+  background: rgba(255, 107, 107, 0.16);
+  color: #ffb4b4;
+  border-color: rgba(255, 107, 107, 0.55);
+  transform: translateY(-1px);
 }
 
 /* ---------- quiz review overlay ---------- */

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Check, Copy, Crown, FileUp, Play, RotateCcw, Swords, Timer, Trash2, Trophy, X, Zap } from "lucide-react";
+import { Check, Copy, Crown, FileUp, LogOut, Play, RotateCcw, Swords, Timer, Trash2, Trophy, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -248,6 +248,25 @@ export default function Clash() {
     setQuizPanel(false);
   };
 
+  // Abandon the current arena and fall back to the lobby (room-code + create).
+  // Leaving a live match forfeits it to the rival; leaving a waiting room just
+  // closes it.
+  const leaveToLobby = async () => {
+    if (!game) {
+      reset();
+      return;
+    }
+    const forfeit = game.status === "active";
+    if (forfeit && !window.confirm(t("clash.leaveConfirm", "Leave the match? Your rival takes the win."))) return;
+    try {
+      await api.post(`/clash/games/${game.id}/abandon`);
+    } catch (error) {
+      setFlash(messageFrom(error, t("clash.leaveFail", "Could not leave the arena.")));
+      return;
+    }
+    reset();
+  };
+
   const requireSignIn = !user || user.guest;
 
   // -------- anonymous gate --------
@@ -255,7 +274,7 @@ export default function Clash() {
   if (requireSignIn) {
     return (
       <div className="clash-shell">
-        <ClashHeader user={user} />
+<ClashHeader user={user} onLeave={phase === "lobby" || phase === "duel" ? leaveToLobby : undefined} />
         <section className="clash-signin">
           <Swords size={40} />
           <h2>{t("clash.signinTitle", "Challenge a friend. Climb the arena.")}</h2>
@@ -349,9 +368,6 @@ export default function Clash() {
               <button type="button" className="clash-copy" onClick={copyInvite}>
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 {copied ? t("clash.copied", "Copied!") : `${window.location.origin}/clash?code=${game.code}`}
-              </button>
-              <button type="button" className="clash-link-btn" onClick={reset}>
-                <X size={13} /> {t("clash.leaveLobby", "Leave the lobby")}
               </button>
             </div>
             <div className="clash-versus">
@@ -537,7 +553,7 @@ export default function Clash() {
   );
 }
 
-function ClashHeader({ user }) {
+function ClashHeader({ user, onLeave }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   return (
@@ -546,6 +562,11 @@ function ClashHeader({ user }) {
         <Mark /><b>UPNEX</b><em>CLASH</em>
       </button>
       <div className="clash-header-right">
+        {onLeave && (
+          <button type="button" className="clash-leave" onClick={onLeave}>
+            <LogOut size={14} /> {t("clash.leaveToLobby", "Leave to lobby")}
+          </button>
+        )}
         <span className="clash-header-points"><Swords size={14} /> {user?.clashPoints ?? 0}</span>
         <Initials name={user?.name} side="gold" />
       </div>
